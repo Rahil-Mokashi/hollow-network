@@ -1,0 +1,210 @@
+.app-root {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #0a0b0d;
+}
+
+.app-root canvas {
+  display: block;
+}
+
+.ui-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+  color: #ece9e0;
+}
+
+.panel {
+  background: rgba(20, 22, 26, 0.82);
+  border: 1px solid rgba(95, 214, 196, 0.25);
+  border-radius: 10px;
+  backdrop-filter: blur(6px);
+  pointer-events: auto;
+}
+
+.panel-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5fd6c4;
+  margin-bottom: 0.5rem;
+}
+
+.top-bar {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.25rem;
+  right: 1.25rem;
+  max-width: 640px;
+  padding: 0.9rem 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.level-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffb066;
+  margin-bottom: 0.3rem;
+}
+
+.briefing {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: #b8b4a8;
+  max-width: 46ch;
+}
+
+.hop-counter {
+  font-size: 0.78rem;
+  white-space: nowrap;
+  color: #b8b4a8;
+  text-align: right;
+}
+
+.hop-value {
+  color: #ffb066;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.hop-sep {
+  margin: 0 0.2rem;
+  color: #555;
+}
+
+.ability-btn {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: auto;
+  background: rgba(20, 22, 26, 0.88);
+  border: 1px solid #ffb066;
+  color: #ffb066;
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.65rem 1.4rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.ability-btn:hover:not(:disabled) {
+  background: rgba(255, 176, 102, 0.15);
+}
+
+.ability-btn:active:not(:disabled) {
+  transform: translateX(-50%) scale(0.97);
+}
+
+.ability-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ability-key {
+  display: inline-block;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  padding: 0 0.35em;
+  margin-right: 0.4em;
+  font-size: 0.8em;
+}
+
+.side-panels {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  width: 240px;
+}
+
+.minimap svg {
+  display: block;
+}
+
+.field-notes {
+  padding: 0.9rem 1rem;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.note-entry {
+  margin-bottom: 0.8rem;
+}
+
+.note-entry:last-child {
+  margin-bottom: 0;
+}
+
+.note-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #ffb066;
+  margin-bottom: 0.3rem;
+}
+
+.note-entry p {
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: #b8b4a8;
+  margin: 0;
+}
+
+.controls-hint {
+  position: absolute;
+  bottom: 1.25rem;
+  left: 1.25rem;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.7rem;
+  color: #7c8590;
+}
+
+.win-banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 1.6rem 2rem;
+  max-width: 420px;
+  text-align: center;
+}
+
+.win-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #ffb066;
+  margin-bottom: 0.6rem;
+}
+
+.win-body {
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: #b8b4a8;
+  margin-bottom: 1.1rem;
+}
+
+.continue-btn {
+  background: #ffb066;
+  color: #1a1005;
+  border: none;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 0.6rem 1.3rem;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.continue-btn:hover {
+  background: #ffc488;
+}

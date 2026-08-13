@@ -1,0 +1,20 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #0a0b0d;
+  color-scheme: dark;
+}
+
+body {
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+  -webkit-font-smoothing: antialiased;
+}
