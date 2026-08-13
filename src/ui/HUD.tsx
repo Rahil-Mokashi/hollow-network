@@ -1,9 +1,100 @@
-import { useGameStore, ACTS, nextActAfter } from "../game/store";
+import { useEffect, useState } from "react";
+import { useGameStore, ACTS, nextActAfter, TOTAL_OPTIMAL_HOPS } from "../game/store";
+import { saveBestRun, formatTime, type BestRun } from "../game/score";
 
 const ABILITY_LABEL: Record<string, string> = {
   bfsTorch: "BFS Torch",
   unionFindKey: "Union-Find Key",
 };
+
+function FinaleSummary() {
+  const runHops = useGameStore((s) => s.runHops);
+  const runStartAt = useGameStore((s) => s.runStartAt);
+  const runRewinds = useGameStore((s) => s.runRewinds);
+  const runDejaVu = useGameStore((s) => s.runDejaVu);
+  const returnToTitle = useGameStore((s) => s.returnToTitle);
+  const enterMaze = useGameStore((s) => s.enterMaze);
+
+  const [result, setResult] = useState<{ best: BestRun; isNewBest: boolean } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const timeMs = runStartAt ? Date.now() - runStartAt : 0;
+    setResult(
+      saveBestRun({ hops: runHops, optimalHops: TOTAL_OPTIMAL_HOPS, timeMs, rewinds: runRewinds, dejaVu: runDejaVu })
+    );
+    // Intentionally runs once, at the moment the finale mounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (!result) return null;
+  const { best, isNewBest } = result;
+
+  function copyResults() {
+    const text = `The Hollow Network — Rank ${best.grade} · ${best.hops}/${TOTAL_OPTIMAL_HOPS} hops · ${formatTime(best.timeMs)} · ${best.rewinds} rewinds · ${best.dejaVu} déjà vu`;
+    navigator.clipboard?.writeText(text).then(
+      () => setCopied(true),
+      () => {}
+    );
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="panel finale-banner">
+      <div className="finale-title">The Hollow Network — Complete</div>
+      <div className="finale-body">
+        Two networks, once separate, now one. Every chamber you crossed was a real
+        algorithm running underneath you.
+      </div>
+
+      <div className="finale-grade">
+        <span className="grade-letter">{best.grade}</span>
+        {isNewBest && <span className="new-best-badge">New Best</span>}
+      </div>
+
+      <div className="finale-stats">
+        <div>
+          <span className="stat-value">
+            {runHops}/{TOTAL_OPTIMAL_HOPS}
+          </span>
+          <span className="stat-label">hops / optimal</span>
+        </div>
+        <div>
+          <span className="stat-value">{formatTime(best.timeMs)}</span>
+          <span className="stat-label">time</span>
+        </div>
+        <div>
+          <span className="stat-value">{runRewinds}</span>
+          <span className="stat-label">rewinds</span>
+        </div>
+        <div>
+          <span className="stat-value">{runDejaVu}</span>
+          <span className="stat-label">déjà vu</span>
+        </div>
+      </div>
+
+      <ul className="finale-list">
+        <li>Breadth-first search — the Torch</li>
+        <li>Depth-first search — the Grapple</li>
+        <li>Cycle detection — the Ward</li>
+        <li>Union-find — the Key</li>
+      </ul>
+
+      <div className="finale-actions">
+        <button className="continue-btn" onClick={copyResults}>
+          {copied ? "Copied" : "Copy Results"}
+        </button>
+        <button className="continue-btn continue-btn-secondary" onClick={returnToTitle}>
+          Play again
+        </button>
+      </div>
+
+      <button className="maze-trial-btn" onClick={enterMaze}>
+        Bonus Trial: The Maze (A*) →
+      </button>
+    </div>
+  );
+}
 
 export function HUD() {
   const level = useGameStore((s) => s.level);
@@ -101,24 +192,7 @@ export function HUD() {
         </div>
       )}
 
-      {wonFinale && (
-        <div className="panel finale-banner">
-          <div className="finale-title">The Hollow Network — Complete</div>
-          <div className="finale-body">
-            Two networks, once separate, now one. Every chamber you crossed was a real
-            algorithm running underneath you.
-          </div>
-          <ul className="finale-list">
-            <li>Breadth-first search — the Torch</li>
-            <li>Depth-first search — the Grapple</li>
-            <li>Cycle detection — the Ward</li>
-            <li>Union-find — the Key</li>
-          </ul>
-          <button className="continue-btn" onClick={() => advanceToLevel(ACTS[0])}>
-            Play again
-          </button>
-        </div>
-      )}
+      {wonFinale && <FinaleSummary />}
     </>
   );
 }

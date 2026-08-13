@@ -86,3 +86,9 @@ export function playSwell(): void {
   tone(110, { type: "sine", duration: 2.6, gain: 0.14, glideTo: 220 });
   tone(165, { type: "sine", duration: 2.6, gain: 0.08, glideTo: 330, delay: 0.15 });
 }
+
+/** A* maze — starting a solve pass: a soft rising sweep. */
+export function playScanStart(): void {
+  tone(200, { type: "sine", duration: 0.5, gain: 0.06, glideTo: 340 });
+}
+

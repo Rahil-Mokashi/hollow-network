@@ -2,19 +2,32 @@ import { useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { EffectComposer, Bloom, Vignette, ChromaticAberration } from "@react-three/postprocessing";
 import { Scene } from "./scene/Scene";
+import { TitleBackdrop } from "./scene/TitleBackdrop";
+import { MazeScene } from "./scene/MazeScene";
 import { HUD } from "./ui/HUD";
 import { Minimap } from "./ui/Minimap";
 import { FieldNotes } from "./ui/FieldNotes";
+import { AlgorithmTrace } from "./ui/AlgorithmTrace";
+import { TitleScreen } from "./ui/TitleScreen";
+import { MazeUI } from "./ui/MazeUI";
 import { useGameStore } from "./game/store";
 import "./App.css";
 
+const CAMERA_BY_SCREEN: Record<string, { position: [number, number, number]; fov: number }> = {
+  title: { position: [0, 9, 11], fov: 45 },
+  playing: { position: [0, 9, 11], fov: 45 },
+  maze: { position: [0, 24, 20], fov: 50 },
+};
+
 function App() {
+  const screen = useGameStore((s) => s.screen);
   const level = useGameStore((s) => s.level);
   const triggerAbility = useGameStore((s) => s.triggerAbility);
   const dejaVuAt = useGameStore((s) => s.dejaVuAt);
   const [dejaVuFlash, setDejaVuFlash] = useState(false);
 
   useEffect(() => {
+    if (screen !== "playing") return;
     function onKeyDown(e: KeyboardEvent) {
       if ((e.key === "e" || e.key === "E") && level.ability !== "none" && level.ability !== "dfsGrapple" && level.ability !== "cycleWard") {
         triggerAbility();
@@ -22,7 +35,7 @@ function App() {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [level, triggerAbility]);
+  }, [screen, level, triggerAbility]);
 
   useEffect(() => {
     if (dejaVuAt === null) return;
@@ -33,8 +46,10 @@ function App() {
 
   return (
     <div className="app-root">
-      <Canvas camera={{ position: [0, 9, 11], fov: 45 }} dpr={[1, 2]}>
-        <Scene />
+      <Canvas key={screen} camera={CAMERA_BY_SCREEN[screen]} dpr={[1, 2]}>
+        {screen === "title" && <TitleBackdrop />}
+        {screen === "playing" && <Scene />}
+        {screen === "maze" && <MazeScene />}
         <EffectComposer>
           <Bloom intensity={1.1} luminanceThreshold={0.15} luminanceSmoothing={0.4} mipmapBlur />
           <Vignette eskil={false} offset={0.25} darkness={0.65} />
@@ -42,18 +57,25 @@ function App() {
         </EffectComposer>
       </Canvas>
 
-      <div className={"deja-vu-overlay" + (dejaVuFlash ? " deja-vu-active" : "")} />
+      {screen === "playing" && <div className={"deja-vu-overlay" + (dejaVuFlash ? " deja-vu-active" : "")} />}
 
-      <div className="ui-layer">
-        <HUD />
-        <div className="side-panels">
-          <Minimap />
-          <FieldNotes />
+      {screen === "title" && <TitleScreen />}
+
+      {screen === "playing" && (
+        <div className="ui-layer">
+          <HUD />
+          <div className="side-panels">
+            <Minimap />
+            <AlgorithmTrace />
+            <FieldNotes />
+          </div>
+          <div className="panel controls-hint">
+            Click a lit chamber to travel · <span className="ability-key">E</span> to use an ability
+          </div>
         </div>
-        <div className="panel controls-hint">
-          Click a lit chamber to travel · <span className="ability-key">E</span> to use an ability
-        </div>
-      </div>
+      )}
+
+      {screen === "maze" && <MazeUI />}
     </div>
   );
 }

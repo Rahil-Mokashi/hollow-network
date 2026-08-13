@@ -13,6 +13,12 @@ interface TravelAnim {
 }
 
 interface GameState {
+  screen: "title" | "playing" | "maze";
+  runStartAt: number | null;
+  runHops: number;
+  runRewinds: number;
+  runDejaVu: number;
+
   level: LevelDef;
   graph: Graph;
   currentNodeId: string;
@@ -50,6 +56,9 @@ interface GameState {
   triggerAbility: () => void;
   advanceToLevel: (level: LevelDef) => void;
   restartLevel: () => void;
+  startRun: () => void;
+  returnToTitle: () => void;
+  enterMaze: () => void;
 }
 
 function initialReveal(level: LevelDef): Set<string> {
@@ -63,7 +72,15 @@ function computeOptimal(level: LevelDef): number | null {
   return path ? path.length - 1 : null;
 }
 
+export const TOTAL_OPTIMAL_HOPS = ACTS.reduce((sum, act) => sum + (computeOptimal(act) ?? 0), 0);
+
 export const useGameStore = create<GameState>((set, get) => ({
+  screen: "title",
+  runStartAt: null,
+  runHops: 0,
+  runRewinds: 0,
+  runDejaVu: 0,
+
   level: ACT1,
   graph: ACT1.graph,
   currentNodeId: ACT1.startId,
@@ -150,7 +167,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   finishTravel: () => {
     const state = get();
-    const { travelAnim, level, hopsTaken, revealedNodeIds, dfsPath, rewindCharges, visitedThisLoop, loopRepeats } = state;
+    const { travelAnim, level, hopsTaken, revealedNodeIds, dfsPath, rewindCharges, visitedThisLoop, loopRepeats, runHops, runRewinds, runDejaVu } = state;
     if (!travelAnim) return;
     const { to, isBacktrack } = travelAnim;
 
@@ -162,6 +179,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       travelAnim: null,
       hopsTaken: hopsTaken + 1,
       revealedNodeIds: nextRevealed,
+      runHops: runHops + 1,
     };
 
     if (level.ability === "dfsGrapple") {
@@ -169,6 +187,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (isBacktrack) {
         patch.dfsPath = dfsPath.slice(0, -1);
         patch.rewindCharges = rewindCharges - 1;
+        patch.runRewinds = runRewinds + 1;
       } else {
         patch.dfsPath = [...dfsPath, to];
       }
@@ -180,6 +199,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       if (isDejaVu) {
         patch.dejaVuAt = Date.now();
         patch.loopRepeats = loopRepeats + 1;
+        patch.runDejaVu = runDejaVu + 1;
         playDejaVu();
       } else {
         const nextLoop = new Set(visitedThisLoop);
@@ -235,6 +255,14 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   advanceToLevel: (level) => get().loadLevel(level),
   restartLevel: () => get().loadLevel(get().level),
+
+  startRun: () => {
+    set({ screen: "playing", runStartAt: Date.now(), runHops: 0, runRewinds: 0, runDejaVu: 0 });
+    get().loadLevel(ACT1);
+  },
+
+  returnToTitle: () => set({ screen: "title" }),
+  enterMaze: () => set({ screen: "maze" }),
 }));
 
 export { ACTS };
