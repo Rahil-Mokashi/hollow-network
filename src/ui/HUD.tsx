@@ -1,16 +1,27 @@
-import { useGameStore } from "../game/store";
+import { useGameStore, ACTS, nextActAfter } from "../game/store";
+
+const ABILITY_LABEL: Record<string, string> = {
+  bfsTorch: "BFS Torch",
+  unionFindKey: "Union-Find Key",
+};
 
 export function HUD() {
   const level = useGameStore((s) => s.level);
   const hopsTaken = useGameStore((s) => s.hopsTaken);
   const optimalHops = useGameStore((s) => s.optimalHops);
   const won = useGameStore((s) => s.won);
-  const triggerTorch = useGameStore((s) => s.triggerTorch);
-  const advanceToAct2 = useGameStore((s) => s.advanceToAct2);
-  const restartAct2 = useGameStore((s) => s.restartAct2);
+  const wonFinale = useGameStore((s) => s.wonFinale);
+  const triggerAbility = useGameStore((s) => s.triggerAbility);
+  const advanceToLevel = useGameStore((s) => s.advanceToLevel);
+  const restartLevel = useGameStore((s) => s.restartLevel);
   const travelAnim = useGameStore((s) => s.travelAnim);
+  const rewindCharges = useGameStore((s) => s.rewindCharges);
+  const loopRepeats = useGameStore((s) => s.loopRepeats);
+  const currentNodeId = useGameStore((s) => s.currentNodeId);
 
-  const isAct1 = level.id === "act1";
+  const showAbilityButton = level.ability === "bfsTorch" || level.ability === "unionFindKey";
+  const unionReady = level.ability === "unionFindKey" && level.bridge && currentNodeId === level.bridge.a;
+  const next = nextActAfter(level.id);
 
   return (
     <>
@@ -19,31 +30,92 @@ export function HUD() {
           <div className="level-title">{level.title}</div>
           <div className="briefing">{level.briefing}</div>
         </div>
-        {optimalHops !== null && (
-          <div className="hop-counter">
-            <span className="hop-value">{hopsTaken}</span>
-            <span className="hop-sep">/</span>
-            <span className="hop-optimal">{optimalHops} hops (best)</span>
+        <div className="top-bar-right">
+          {optimalHops !== null && (
+            <div className="hop-counter">
+              <span className="hop-value">{hopsTaken}</span>
+              <span className="hop-sep">/</span>
+              <span className="hop-optimal">{optimalHops} hops (best)</span>
+            </div>
+          )}
+          <div className="act-pips">
+            {ACTS.map((act) => (
+              <span
+                key={act.id}
+                className={
+                  "pip" +
+                  (act.id === level.id ? " pip-current" : "") +
+                  (ACTS.findIndex((a) => a.id === act.id) < ACTS.findIndex((a) => a.id === level.id) ? " pip-done" : "")
+                }
+                title={act.title}
+              />
+            ))}
           </div>
-        )}
+        </div>
       </div>
 
-      {level.requiresTorch && !won && (
-        <button className="ability-btn" onClick={triggerTorch} disabled={!!travelAnim}>
-          <span className="ability-key">E</span> BFS Torch
+      {level.ability === "dfsGrapple" && (
+        <div className="panel lantern-strip">
+          <span className="panel-label">Rewind Charges</span>
+          <div className="lanterns">
+            {Array.from({ length: level.rewindCharges ?? 0 }).map((_, i) => (
+              <span key={i} className={"lantern" + (i < rewindCharges ? " lantern-lit" : "")} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {level.ability === "cycleWard" && (
+        <div className="panel lantern-strip">
+          <span className="panel-label">Loops Lost</span>
+          <div className="lanterns">
+            {Array.from({ length: level.loopFailThreshold ?? 3 }).map((_, i) => (
+              <span key={i} className={"lantern lantern-warn" + (i < loopRepeats ? " lantern-lit" : "")} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {showAbilityButton && !won && (
+        <button
+          className="ability-btn"
+          onClick={triggerAbility}
+          disabled={!!travelAnim || (level.ability === "unionFindKey" && !unionReady)}
+        >
+          <span className="ability-key">E</span> {ABILITY_LABEL[level.ability]}
+          {level.ability === "unionFindKey" && !unionReady ? " (reach the Pylon)" : ""}
         </button>
       )}
 
-      {won && (
+      {won && !wonFinale && (
         <div className="panel win-banner">
-          <div className="win-title">{isAct1 ? "Threshold reached" : "Beacon Vault cleared"}</div>
+          <div className="win-title">{level.goalId ? "Chamber reached" : "Cleared"}</div>
           <div className="win-body">
-            {isAct1
-              ? "You crossed the network on foot alone. Ahead, the fog thickens — you'll need the BFS Torch to see through it."
-              : `You reached the Beacon in ${hopsTaken} hop${hopsTaken === 1 ? "" : "s"}. Optimal was ${optimalHops}.`}
+            {optimalHops !== null
+              ? `You reached the goal in ${hopsTaken} hop${hopsTaken === 1 ? "" : "s"}. Optimal was ${optimalHops}.`
+              : "Onward."}
           </div>
-          <button className="continue-btn" onClick={isAct1 ? advanceToAct2 : restartAct2}>
-            {isAct1 ? "Enter the Flood Vault" : "Replay the Vault"}
+          <button className="continue-btn" onClick={() => (next ? advanceToLevel(next) : restartLevel())}>
+            {next ? `Continue to ${next.title}` : "Replay"}
+          </button>
+        </div>
+      )}
+
+      {wonFinale && (
+        <div className="panel finale-banner">
+          <div className="finale-title">The Hollow Network — Complete</div>
+          <div className="finale-body">
+            Two networks, once separate, now one. Every chamber you crossed was a real
+            algorithm running underneath you.
+          </div>
+          <ul className="finale-list">
+            <li>Breadth-first search — the Torch</li>
+            <li>Depth-first search — the Grapple</li>
+            <li>Cycle detection — the Ward</li>
+            <li>Union-find — the Key</li>
+          </ul>
+          <button className="continue-btn" onClick={() => advanceToLevel(ACTS[0])}>
+            Play again
           </button>
         </div>
       )}

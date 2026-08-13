@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
-import { EffectComposer, Bloom, Vignette } from "@react-three/postprocessing";
+import { EffectComposer, Bloom, Vignette, ChromaticAberration } from "@react-three/postprocessing";
 import { Scene } from "./scene/Scene";
 import { HUD } from "./ui/HUD";
 import { Minimap } from "./ui/Minimap";
@@ -10,17 +10,26 @@ import "./App.css";
 
 function App() {
   const level = useGameStore((s) => s.level);
-  const triggerTorch = useGameStore((s) => s.triggerTorch);
+  const triggerAbility = useGameStore((s) => s.triggerAbility);
+  const dejaVuAt = useGameStore((s) => s.dejaVuAt);
+  const [dejaVuFlash, setDejaVuFlash] = useState(false);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if ((e.key === "e" || e.key === "E") && level.requiresTorch) {
-        triggerTorch();
+      if ((e.key === "e" || e.key === "E") && level.ability !== "none" && level.ability !== "dfsGrapple" && level.ability !== "cycleWard") {
+        triggerAbility();
       }
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [level, triggerTorch]);
+  }, [level, triggerAbility]);
+
+  useEffect(() => {
+    if (dejaVuAt === null) return;
+    setDejaVuFlash(true);
+    const timer = setTimeout(() => setDejaVuFlash(false), 900);
+    return () => clearTimeout(timer);
+  }, [dejaVuAt]);
 
   return (
     <div className="app-root">
@@ -29,8 +38,11 @@ function App() {
         <EffectComposer>
           <Bloom intensity={1.1} luminanceThreshold={0.15} luminanceSmoothing={0.4} mipmapBlur />
           <Vignette eskil={false} offset={0.25} darkness={0.65} />
+          <ChromaticAberration offset={dejaVuFlash ? [0.0025, 0.0025] : [0, 0]} />
         </EffectComposer>
       </Canvas>
+
+      <div className={"deja-vu-overlay" + (dejaVuFlash ? " deja-vu-active" : "")} />
 
       <div className="ui-layer">
         <HUD />

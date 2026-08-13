@@ -4,13 +4,16 @@ import type { LevelDef } from "../game/levels";
 
 interface FogOfWarProps {
   level: LevelDef;
+  excludeIds?: Set<string>;
 }
 
 /** Drifting dust motes over every chamber the player hasn't revealed yet. */
-export function FogOfWar({ level }: FogOfWarProps) {
+export function FogOfWar({ level, excludeIds }: FogOfWarProps) {
   const revealedNodeIds = useGameStore((s) => s.revealedNodeIds);
 
-  const hiddenNodes = level.graph.nodeIds().filter((id) => !revealedNodeIds.has(id));
+  const hiddenNodes = level.graph
+    .nodeIds()
+    .filter((id) => !revealedNodeIds.has(id) && !excludeIds?.has(id));
   if (hiddenNodes.length === 0) return null;
 
   return (

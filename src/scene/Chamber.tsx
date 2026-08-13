@@ -7,35 +7,63 @@ import { useGameStore } from "../game/store";
 const COLD_BLUE = new THREE.Color("#2e6f9e");
 const AMBER = new THREE.Color("#c8894a");
 const AMBER_BRIGHT = new THREE.Color("#ffb066");
+const TEAL_AVAILABLE = new THREE.Color("#5fd6c4");
+const PALE_DISTANT = new THREE.Color("#7fb8c9");
+const VIOLET = new THREE.Color("#b48cff");
 const BASALT = new THREE.Color("#0c0c0e");
 
 interface ChamberProps {
   id: string;
   position: [number, number, number];
   seed: number;
+  distant?: boolean;
 }
 
-export function Chamber({ id, position, seed }: ChamberProps) {
+export function Chamber({ id, position, seed, distant = false }: ChamberProps) {
   const geometry = useMemo(() => organicChamberGeometry(1.6, seed), [seed]);
   const materialRef = useRef<THREE.MeshStandardMaterial>(null);
   const lightRef = useRef<THREE.PointLight>(null);
+  const groupRef = useRef<THREE.Group>(null);
 
   const currentNodeId = useGameStore((s) => s.currentNodeId);
   const revealedNodeIds = useGameStore((s) => s.revealedNodeIds);
   const canTravelTo = useGameStore((s) => s.canTravelTo(id));
   const beginTravel = useGameStore((s) => s.beginTravel);
+  const dejaVuAt = useGameStore((s) => s.dejaVuAt);
 
   const isCurrent = currentNodeId === id;
   const isRevealed = revealedNodeIds.has(id);
+  const isAvailable = !isCurrent && !isRevealed && canTravelTo;
 
   useFrame(({ clock }) => {
     if (!materialRef.current || !lightRef.current) return;
-    if (isCurrent) {
+
+    const recentDejaVu = dejaVuAt !== null && Date.now() - dejaVuAt < 1000;
+
+    if (distant) {
+      const bob = Math.sin(clock.elapsedTime * 0.6 + seed) * 0.35;
+      if (groupRef.current) groupRef.current.position.y = bob;
+      materialRef.current.emissive.copy(PALE_DISTANT);
+      materialRef.current.emissiveIntensity = 0.35;
+      lightRef.current.intensity = 0.5;
+      lightRef.current.color.copy(PALE_DISTANT);
+    } else if (recentDejaVu) {
+      materialRef.current.emissive.copy(VIOLET);
+      materialRef.current.emissiveIntensity = 0.8;
+      lightRef.current.intensity = 1.6;
+      lightRef.current.color.copy(VIOLET);
+    } else if (isCurrent) {
       const pulse = 0.75 + Math.sin(clock.elapsedTime * 2.4) * 0.25;
       materialRef.current.emissive.copy(AMBER_BRIGHT);
       materialRef.current.emissiveIntensity = pulse;
       lightRef.current.intensity = 2.2 * pulse;
       lightRef.current.color.copy(AMBER_BRIGHT);
+    } else if (isAvailable) {
+      const pulse = 0.5 + Math.sin(clock.elapsedTime * 3.2) * 0.18;
+      materialRef.current.emissive.copy(TEAL_AVAILABLE);
+      materialRef.current.emissiveIntensity = pulse;
+      lightRef.current.intensity = 1.1;
+      lightRef.current.color.copy(TEAL_AVAILABLE);
     } else if (isRevealed) {
       materialRef.current.emissive.copy(AMBER);
       materialRef.current.emissiveIntensity = 0.55;
@@ -50,7 +78,7 @@ export function Chamber({ id, position, seed }: ChamberProps) {
   });
 
   return (
-    <group position={position}>
+    <group ref={groupRef} position={position}>
       <mesh
         geometry={geometry}
         onClick={(e) => {

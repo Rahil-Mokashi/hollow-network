@@ -1,12 +1,15 @@
 import { create } from "zustand";
 import { Graph } from "../graph/types";
 import { bfsOneRing, bfsShortestPath } from "../graph/bfs";
-import { ACT1, ACT2 } from "./levels";
+import { UnionFind } from "../graph/unionFind";
+import { ACT1, ACTS } from "./levels";
 import type { LevelDef } from "./levels";
+import { playChime, playCommit, playRewind, playDejaVu, playFanfare, playSwell, playWhoosh } from "../audio/sound";
 
 interface TravelAnim {
   from: string;
   to: string;
+  isBacktrack: boolean;
 }
 
 interface GameState {
@@ -17,24 +20,47 @@ interface GameState {
   hopsTaken: number;
   optimalHops: number | null;
   won: boolean;
-  torchUnlocked: boolean;
+  travelAnim: TravelAnim | null;
+
+  // BFS Torch (Act II)
   torchUsed: boolean;
   torchPulseAt: number | null;
-  travelAnim: TravelAnim | null;
-  lastAbilityLog: string | null;
+
+  // DFS Grapple (Act III)
+  dfsPath: string[];
+  rewindCharges: number;
+  grappleUsed: boolean;
+
+  // Cycle Ward (Act IV)
+  visitedThisLoop: Set<string>;
+  loopRepeats: number;
+  dejaVuAt: number | null;
+  cycleWardUsed: boolean;
+
+  // Union-Find Key (Act V)
+  bridgeActive: boolean;
+  mergeAt: number | null;
+  unionFindUsed: boolean;
+  wonFinale: boolean;
 
   loadLevel: (level: LevelDef) => void;
   canTravelTo: (nodeId: string) => boolean;
   beginTravel: (nodeId: string) => void;
   finishTravel: () => void;
-  triggerTorch: () => void;
-  advanceToAct2: () => void;
-  restartAct2: () => void;
+  triggerAbility: () => void;
+  advanceToLevel: (level: LevelDef) => void;
+  restartLevel: () => void;
 }
 
 function initialReveal(level: LevelDef): Set<string> {
-  if (level.requiresTorch) return new Set([level.startId]);
-  return new Set(level.graph.nodeIds());
+  if (level.ability === "none") return new Set(level.graph.nodeIds());
+  return new Set([level.startId]);
+}
+
+function computeOptimal(level: LevelDef): number | null {
+  if (!level.goalId) return null;
+  const path = bfsShortestPath(level.graph, level.startId, level.goalId);
+  return path ? path.length - 1 : null;
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -43,13 +69,26 @@ export const useGameStore = create<GameState>((set, get) => ({
   currentNodeId: ACT1.startId,
   revealedNodeIds: initialReveal(ACT1),
   hopsTaken: 0,
-  optimalHops: ACT1.goalId ? bfsShortestPath(ACT1.graph, ACT1.startId, ACT1.goalId)!.length - 1 : null,
+  optimalHops: computeOptimal(ACT1),
   won: false,
-  torchUnlocked: false,
+  travelAnim: null,
+
   torchUsed: false,
   torchPulseAt: null,
-  travelAnim: null,
-  lastAbilityLog: null,
+
+  dfsPath: [ACT1.startId],
+  rewindCharges: 0,
+  grappleUsed: false,
+
+  visitedThisLoop: new Set([ACT1.startId]),
+  loopRepeats: 0,
+  dejaVuAt: null,
+  cycleWardUsed: false,
+
+  bridgeActive: false,
+  mergeAt: null,
+  unionFindUsed: false,
+  wonFinale: false,
 
   loadLevel: (level) =>
     set({
@@ -58,50 +97,148 @@ export const useGameStore = create<GameState>((set, get) => ({
       currentNodeId: level.startId,
       revealedNodeIds: initialReveal(level),
       hopsTaken: 0,
-      optimalHops: level.goalId ? bfsShortestPath(level.graph, level.startId, level.goalId)!.length - 1 : null,
+      optimalHops: computeOptimal(level),
       won: false,
       travelAnim: null,
+      dfsPath: [level.startId],
+      rewindCharges: level.rewindCharges ?? 0,
+      visitedThisLoop: new Set([level.startId]),
+      loopRepeats: 0,
+      dejaVuAt: null,
+      bridgeActive: false,
+      mergeAt: null,
+      wonFinale: false,
     }),
 
   canTravelTo: (nodeId) => {
-    const { graph, currentNodeId, revealedNodeIds, travelAnim } = get();
+    const { level, graph, currentNodeId, revealedNodeIds, travelAnim, dfsPath, rewindCharges } = get();
     if (travelAnim) return false;
-    return graph.hasEdge(currentNodeId, nodeId) && revealedNodeIds.has(nodeId);
+    if (!graph.hasEdge(currentNodeId, nodeId)) return false;
+
+    // BFS Torch is the only ability that gates movement behind an explicit
+    // reveal step — every other ability treats "graph-adjacent" as reachable,
+    // since for those, moving IS the exploration.
+    if (level.ability === "bfsTorch") {
+      return revealedNodeIds.has(nodeId);
+    }
+
+    if (level.ability === "dfsGrapple") {
+      const alreadyVisited = revealedNodeIds.has(nodeId);
+      if (!alreadyVisited) return true;
+      const parent = dfsPath.length >= 2 ? dfsPath[dfsPath.length - 2] : null;
+      return nodeId === parent && rewindCharges > 0;
+    }
+
+    return true;
   },
 
   beginTravel: (nodeId) => {
-    if (!get().canTravelTo(nodeId)) return;
-    set({ travelAnim: { from: get().currentNodeId, to: nodeId } });
+    const { level, currentNodeId, dfsPath, canTravelTo } = get();
+    if (!canTravelTo(nodeId)) return;
+
+    let isBacktrack = false;
+    if (level.ability === "dfsGrapple") {
+      const parent = dfsPath.length >= 2 ? dfsPath[dfsPath.length - 2] : null;
+      isBacktrack = nodeId === parent;
+      isBacktrack ? playRewind() : playCommit();
+    } else {
+      playWhoosh();
+    }
+
+    set({ travelAnim: { from: currentNodeId, to: nodeId, isBacktrack } });
   },
 
   finishTravel: () => {
-    const { travelAnim, level, hopsTaken } = get();
+    const state = get();
+    const { travelAnim, level, hopsTaken, revealedNodeIds, dfsPath, rewindCharges, visitedThisLoop, loopRepeats } = state;
     if (!travelAnim) return;
-    const won = travelAnim.to === level.goalId;
-    set({
-      currentNodeId: travelAnim.to,
+    const { to, isBacktrack } = travelAnim;
+
+    const nextRevealed = new Set(revealedNodeIds);
+    nextRevealed.add(to);
+
+    const patch: Partial<GameState> = {
+      currentNodeId: to,
       travelAnim: null,
       hopsTaken: hopsTaken + 1,
-      won,
-    });
+      revealedNodeIds: nextRevealed,
+    };
+
+    if (level.ability === "dfsGrapple") {
+      patch.grappleUsed = true;
+      if (isBacktrack) {
+        patch.dfsPath = dfsPath.slice(0, -1);
+        patch.rewindCharges = rewindCharges - 1;
+      } else {
+        patch.dfsPath = [...dfsPath, to];
+      }
+    }
+
+    if (level.ability === "cycleWard") {
+      patch.cycleWardUsed = true;
+      const isDejaVu = visitedThisLoop.has(to);
+      if (isDejaVu) {
+        patch.dejaVuAt = Date.now();
+        patch.loopRepeats = loopRepeats + 1;
+        playDejaVu();
+      } else {
+        const nextLoop = new Set(visitedThisLoop);
+        nextLoop.add(to);
+        patch.visitedThisLoop = nextLoop;
+      }
+      const threshold = level.loopFailThreshold ?? 3;
+      if ((patch.loopRepeats ?? loopRepeats) >= threshold) {
+        patch.currentNodeId = level.startId;
+        patch.visitedThisLoop = new Set([level.startId]);
+        patch.loopRepeats = 0;
+      }
+    }
+
+    const won = to === level.goalId;
+    patch.won = won;
+    if (won) {
+      playFanfare();
+      if (level.id === "act5") patch.wonFinale = true;
+    }
+
+    set(patch);
   },
 
-  triggerTorch: () => {
-    const { level, currentNodeId, revealedNodeIds } = get();
-    if (!level.requiresTorch) return;
-    set({ torchPulseAt: Date.now(), lastAbilityLog: "bfsTorch", torchUsed: true });
-    const ring = bfsOneRing(level.graph, currentNodeId);
-    setTimeout(() => {
-      const next = new Set(revealedNodeIds);
-      ring.forEach((id) => next.add(id));
-      set({ revealedNodeIds: next });
-    }, 420);
+  triggerAbility: () => {
+    const { level, graph, currentNodeId, revealedNodeIds } = get();
+
+    if (level.ability === "bfsTorch") {
+      set({ torchPulseAt: Date.now(), torchUsed: true });
+      playChime();
+      const ring = bfsOneRing(level.graph, currentNodeId);
+      setTimeout(() => {
+        const next = new Set(get().revealedNodeIds);
+        ring.forEach((id) => next.add(id));
+        set({ revealedNodeIds: next });
+      }, 420);
+      return;
+    }
+
+    if (level.ability === "unionFindKey" && level.bridge) {
+      if (currentNodeId !== level.bridge.a) return;
+      const uf = new UnionFind(graph.nodeIds());
+      for (const edge of graph.edges) uf.union(edge.a, edge.b);
+      if (uf.connected(level.bridge.a, level.bridge.b)) return;
+
+      graph.addEdge(level.bridge.a, level.bridge.b);
+      const nextRevealed = new Set(revealedNodeIds);
+      (level.clusterBIds ?? []).forEach((id) => nextRevealed.add(id));
+      playSwell();
+      set({ bridgeActive: true, mergeAt: Date.now(), unionFindUsed: true, revealedNodeIds: nextRevealed });
+    }
   },
 
-  advanceToAct2: () => {
-    set({ torchUnlocked: true });
-    get().loadLevel(ACT2);
-  },
-
-  restartAct2: () => get().loadLevel(ACT2),
+  advanceToLevel: (level) => get().loadLevel(level),
+  restartLevel: () => get().loadLevel(get().level),
 }));
+
+export { ACTS };
+export const nextActAfter = (levelId: string): LevelDef | null => {
+  const idx = ACTS.findIndex((a) => a.id === levelId);
+  return idx >= 0 && idx < ACTS.length - 1 ? ACTS[idx + 1] : null;
+};
