@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { astar, heuristicDistance } from "./astar";
 import type { GridSpec } from "./astar";
-import { generateMaze, MAZE_START, MAZE_GOAL, MAZE_SEED } from "../game/maze";
+import { generateMaze, mazeStart, mazeGoal, MAZE_TRIALS } from "../game/maze";
 
 function openGrid(size: number): GridSpec {
   return { width: size, height: size, walls: new Set() };
@@ -53,25 +53,27 @@ describe("astar on an open grid", () => {
   });
 });
 
-describe("the hand-designed maze level", () => {
-  const grid = generateMaze(MAZE_SEED);
+describe.each(MAZE_TRIALS)("hand-designed maze: $label", (trial) => {
+  const grid = generateMaze(trial);
+  const start = mazeStart();
+  const goal = mazeGoal(trial);
 
   it("is solvable from start to goal", () => {
-    const result = astar(grid, MAZE_START, MAZE_GOAL, "manhattan");
+    const result = astar(grid, start, goal, "manhattan");
     expect(result.path).not.toBeNull();
-    expect(result.path![0]).toEqual(MAZE_START);
-    expect(result.path![result.path!.length - 1]).toEqual(MAZE_GOAL);
+    expect(result.path![0]).toEqual(start);
+    expect(result.path![result.path!.length - 1]).toEqual(goal);
   });
 
   it("the path never crosses a wall cell", () => {
-    const result = astar(grid, MAZE_START, MAZE_GOAL, "manhattan");
+    const result = astar(grid, start, goal, "manhattan");
     for (const [r, c] of result.path!) {
       expect(grid.walls.has(`${r},${c}`)).toBe(false);
     }
   });
 
   it("generation is deterministic for a fixed seed", () => {
-    const gridAgain = generateMaze(MAZE_SEED);
+    const gridAgain = generateMaze(trial);
     expect([...gridAgain.walls].sort()).toEqual([...grid.walls].sort());
   });
 
@@ -79,8 +81,8 @@ describe("the hand-designed maze level", () => {
     // True cost-to-goal here IS Manhattan distance, so Manhattan is a
     // perfectly tight heuristic while Euclidean under-informs (it's always
     // <= Manhattan), causing A* to explore at least as many nodes.
-    const manhattanResult = astar(grid, MAZE_START, MAZE_GOAL, "manhattan");
-    const euclideanResult = astar(grid, MAZE_START, MAZE_GOAL, "euclidean");
+    const manhattanResult = astar(grid, start, goal, "manhattan");
+    const euclideanResult = astar(grid, start, goal, "euclidean");
     expect(manhattanResult.expandedCount).toBeLessThanOrEqual(euclideanResult.expandedCount);
   });
 });

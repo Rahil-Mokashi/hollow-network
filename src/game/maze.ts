@@ -9,22 +9,36 @@ function seededRandom(seed: number): () => number {
   };
 }
 
-export const MAZE_SEED = 1337;
-export const MAZE_CELLS = 8;
-export const MAZE_GRID_SIZE = MAZE_CELLS * 2 + 1;
+export interface MazeTrial {
+  label: string;
+  seed: number;
+  cells: number;
+  braidChance: number;
+}
+
+/** Two trials: a first maze to learn the controls on, then a meaningfully
+ * bigger one once the player has already run both heuristics once. */
+export const MAZE_TRIALS: MazeTrial[] = [
+  { label: "Trial I", seed: 1337, cells: 8, braidChance: 0.24 },
+  { label: "Trial II", seed: 2024, cells: 12, braidChance: 0.2 },
+];
 
 /** A perfect maze (single unique path between any two cells) carved with a
- * seeded randomized depth-first backtracker over a logical MAZE_CELLS x
- * MAZE_CELLS grid, expanded onto a (2n+1) grid so every carved cell gets a
- * wall on every side by default. Deterministic — same seed, same maze,
- * every time, so it's a real hand-designed level rather than dynamic noise. */
-export function generateMaze(seed: number = MAZE_SEED): GridSpec {
+ * seeded randomized depth-first backtracker over a logical cells x cells
+ * grid, expanded onto a (2n+1) grid so every carved cell gets a wall on
+ * every side by default, then lightly braided with extra loops — without
+ * loops, a heuristic's quality barely matters, since a single-path maze
+ * forces near-identical exploration regardless of how good the guess is.
+ * Deterministic — same seed, same maze, every time. */
+export function generateMaze(trial: MazeTrial): GridSpec {
+  const { seed, cells, braidChance } = trial;
+  const gridSize = cells * 2 + 1;
   const rand = seededRandom(seed);
-  const visited: boolean[][] = Array.from({ length: MAZE_CELLS }, () => new Array(MAZE_CELLS).fill(false));
+  const visited: boolean[][] = Array.from({ length: cells }, () => new Array(cells).fill(false));
   const walls = new Set<string>();
 
-  for (let r = 0; r < MAZE_GRID_SIZE; r++) {
-    for (let c = 0; c < MAZE_GRID_SIZE; c++) {
+  for (let r = 0; r < gridSize; r++) {
+    for (let c = 0; c < gridSize; c++) {
       walls.add(`${r},${c}`);
     }
   }
@@ -60,7 +74,7 @@ export function generateMaze(seed: number = MAZE_SEED): GridSpec {
     for (const [dr, dc] of dirs) {
       const nr = cr + dr;
       const nc = cc + dc;
-      if (nr >= 0 && nr < MAZE_CELLS && nc >= 0 && nc < MAZE_CELLS && !visited[nr][nc]) {
+      if (nr >= 0 && nr < cells && nc >= 0 && nc < cells && !visited[nr][nc]) {
         carveBetween(cr, cc, nr, nc);
         walk(nr, nc);
       }
@@ -69,28 +83,31 @@ export function generateMaze(seed: number = MAZE_SEED): GridSpec {
 
   walk(0, 0);
 
-  // A perfect maze (pure spanning tree) has exactly one route between any
-  // two cells, which forces both heuristics to expand almost the same set
-  // of dead-end branches regardless of how good the heuristic is. Braiding
-  // — deterministically knocking out a handful of the remaining interior
-  // walls — introduces real loops, so a weaker heuristic (Euclidean) can
-  // actually be lured into exploring more of a loop than it needs to.
-  const BRAID_CHANCE = 0.24;
-  for (let cr = 0; cr < MAZE_CELLS; cr++) {
-    for (let cc = 0; cc < MAZE_CELLS; cc++) {
-      if (cc + 1 < MAZE_CELLS) {
+  for (let cr = 0; cr < cells; cr++) {
+    for (let cc = 0; cc < cells; cc++) {
+      if (cc + 1 < cells) {
         const wallPos = `${cr * 2 + 1},${cc * 2 + 2}`;
-        if (walls.has(wallPos) && rand() < BRAID_CHANCE) walls.delete(wallPos);
+        if (walls.has(wallPos) && rand() < braidChance) walls.delete(wallPos);
       }
-      if (cr + 1 < MAZE_CELLS) {
+      if (cr + 1 < cells) {
         const wallPos = `${cr * 2 + 2},${cc * 2 + 1}`;
-        if (walls.has(wallPos) && rand() < BRAID_CHANCE) walls.delete(wallPos);
+        if (walls.has(wallPos) && rand() < braidChance) walls.delete(wallPos);
       }
     }
   }
 
-  return { width: MAZE_GRID_SIZE, height: MAZE_GRID_SIZE, walls };
+  return { width: gridSize, height: gridSize, walls };
 }
 
-export const MAZE_START: Cell = [1, 1];
-export const MAZE_GOAL: Cell = [MAZE_GRID_SIZE - 2, MAZE_GRID_SIZE - 2];
+export function mazeGridSize(trial: MazeTrial): number {
+  return trial.cells * 2 + 1;
+}
+
+export function mazeStart(): Cell {
+  return [1, 1];
+}
+
+export function mazeGoal(trial: MazeTrial): Cell {
+  const size = mazeGridSize(trial);
+  return [size - 2, size - 2];
+}

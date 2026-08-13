@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useMazeStore, MAZE_ANIM_DURATION_MS } from "../game/mazeStore";
+import { MAZE_TRIALS } from "../game/maze";
 import { useGameStore } from "../game/store";
 import type { Heuristic } from "../graph/astar";
 
@@ -15,6 +16,8 @@ export function MazeUI() {
   const solvedAt = useMazeStore((s) => s.solvedAt);
   const setHeuristic = useMazeStore((s) => s.setHeuristic);
   const replay = useMazeStore((s) => s.replay);
+  const advanceTrial = useMazeStore((s) => s.advanceTrial);
+  const trialIndex = useMazeStore((s) => s.trialIndex);
   const returnToTitle = useGameStore((s) => s.returnToTitle);
 
   const [now, setNow] = useState(() => Date.now());
@@ -34,12 +37,14 @@ export function MazeUI() {
   const manhattanCount = comparisonCounts.manhattan;
   const euclideanCount = comparisonCounts.euclidean;
   const bothRun = manhattanCount !== undefined && euclideanCount !== undefined;
+  const trial = MAZE_TRIALS[trialIndex];
+  const hasNextTrial = trialIndex < MAZE_TRIALS.length - 1;
 
   return (
     <div className="ui-layer">
       <div className="panel top-bar maze-top-bar">
         <div>
-          <div className="level-title">Bonus Trial — The Maze</div>
+          <div className="level-title">Bonus Trial — The Maze ({trial.label})</div>
           <div className="briefing">
             A* pathfinding, weighed against itself: the same maze, two heuristics. Watch how much
             the choice of heuristic changes how much ground the search has to cover.
@@ -120,9 +125,16 @@ export function MazeUI() {
         )}
       </div>
 
-      <button className="continue-btn maze-finish-btn" onClick={returnToTitle}>
-        Return to Title
-      </button>
+      <div className="maze-bottom-actions">
+        {bothRun && hasNextTrial && (
+          <button className="continue-btn maze-next-btn" onClick={advanceTrial}>
+            {MAZE_TRIALS[trialIndex + 1].label}: a bigger maze →
+          </button>
+        )}
+        <button className="continue-btn continue-btn-secondary maze-finish-btn" onClick={returnToTitle}>
+          Return to Title
+        </button>
+      </div>
     </div>
   );
 }

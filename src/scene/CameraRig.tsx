@@ -4,6 +4,7 @@ import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { useGameStore } from "../game/store";
+import { TRAVEL_DURATION, easeInOutCubic } from "./timing";
 
 const FINALE_DISTANCE = 26;
 
@@ -12,16 +13,50 @@ export function CameraRig() {
   const currentNodeId = useGameStore((s) => s.currentNodeId);
   const graph = useGameStore((s) => s.graph);
   const wonFinale = useGameStore((s) => s.wonFinale);
+  const travelAnim = useGameStore((s) => s.travelAnim);
   const { camera } = useThree();
 
-  useFrame(({ clock }) => {
+  const travelElapsed = useRef(0);
+  const trackedAnim = useRef<typeof travelAnim>(null);
+
+  useFrame(({ clock }, delta) => {
     const controls = controlsRef.current;
     if (!controls) return;
-    const node = graph.nodes.get(currentNodeId);
-    if (!node) return;
 
-    const target = new THREE.Vector3(...node.position);
-    controls.target.lerp(target, 0.06);
+    let baseTarget: THREE.Vector3;
+    let followLerp = 0.06;
+    let arcLift = 0;
+
+    if (travelAnim) {
+      if (trackedAnim.current !== travelAnim) {
+        travelElapsed.current = 0;
+        trackedAnim.current = travelAnim;
+      }
+      travelElapsed.current += delta;
+      const t = Math.min(travelElapsed.current / TRAVEL_DURATION, 1);
+      const eased = easeInOutCubic(t);
+
+      const fromNode = graph.nodes.get(travelAnim.from);
+      const toNode = graph.nodes.get(travelAnim.to);
+
+      if (fromNode && toNode) {
+        // The camera flies alongside the traveling light pulse through the
+        // corridor instead of staying locked on the departure chamber until
+        // arrival — real locomotion instead of a teleport-and-snap.
+        baseTarget = new THREE.Vector3(...fromNode.position).lerp(new THREE.Vector3(...toNode.position), eased);
+        followLerp = 0.35;
+        arcLift = Math.sin(eased * Math.PI) * 1.2;
+      } else {
+        baseTarget = controls.target.clone();
+      }
+    } else {
+      trackedAnim.current = null;
+      const node = graph.nodes.get(currentNodeId);
+      baseTarget = node ? new THREE.Vector3(...node.position) : controls.target.clone();
+    }
+
+    controls.target.lerp(baseTarget, followLerp);
+    controls.target.y += arcLift * 0.15;
 
     // A faint idle breathing drift on the target keeps the frame from ever
     // feeling perfectly locked-off.

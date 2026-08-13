@@ -3,8 +3,8 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { corridorCurve } from "./geometry";
 import { useGameStore } from "../game/store";
+import { TRAVEL_DURATION } from "./timing";
 
-const TRAVEL_DURATION = 0.65;
 const DIM = new THREE.Color("#2a3a3c");
 const TEAL = new THREE.Color("#5fd6c4");
 

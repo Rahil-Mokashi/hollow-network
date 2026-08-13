@@ -4,6 +4,7 @@ export function Minimap() {
   const level = useGameStore((s) => s.level);
   const currentNodeId = useGameStore((s) => s.currentNodeId);
   const revealedNodeIds = useGameStore((s) => s.revealedNodeIds);
+  const canTravelTo = useGameStore((s) => s.canTravelTo);
   const { graph } = level;
 
   const xs = graph.nodeIds().map((id) => graph.nodes.get(id)!.position[0]);
@@ -47,17 +48,31 @@ export function Minimap() {
           const p = project(node.position[0], node.position[2]);
           const isCurrent = id === currentNodeId;
           const isRevealed = revealedNodeIds.has(id);
+          const isAvailable = !isCurrent && !isRevealed && canTravelTo(id);
           const fill = isCurrent ? "#ffb066" : isRevealed ? "#c8894a" : "#2e6f9e";
+
+          if (isCurrent) {
+            // Shape cue, not just color: the current chamber is a diamond,
+            // not a dot, so "where am I" doesn't depend on color vision.
+            const s = 6.5;
+            return (
+              <polygon
+                key={id}
+                points={`${p.x},${p.y - s} ${p.x + s},${p.y} ${p.x},${p.y + s} ${p.x - s},${p.y}`}
+                fill={fill}
+                stroke="#fff3e6"
+                strokeWidth={1.5}
+              />
+            );
+          }
+
           return (
-            <circle
-              key={id}
-              cx={p.x}
-              cy={p.y}
-              r={isCurrent ? 5.5 : 4}
-              fill={fill}
-              stroke={isCurrent ? "#fff3e6" : "none"}
-              strokeWidth={1.5}
-            />
+            <g key={id}>
+              {isAvailable && (
+                <circle cx={p.x} cy={p.y} r={7} fill="none" stroke="#f0ede4" strokeWidth={1} strokeDasharray="2,2" opacity={0.7} />
+              )}
+              <circle cx={p.x} cy={p.y} r={4} fill={fill} />
+            </g>
           );
         })}
       </svg>

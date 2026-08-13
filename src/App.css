@@ -610,12 +610,17 @@
   margin: 0.5rem 0 0;
 }
 
-.maze-finish-btn {
+.maze-bottom-actions {
   position: absolute;
   bottom: 1.5rem;
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  gap: 0.7rem;
   pointer-events: auto;
+}
+
+.maze-finish-btn {
   background: transparent;
   color: #b8b4a8;
   border: 1px solid rgba(184, 180, 168, 0.35);
@@ -624,6 +629,17 @@
 .maze-finish-btn:hover {
   border-color: #ffb066;
   color: #ffb066;
+}
+
+.maze-next-btn {
+  background: #5fd6c4;
+  color: #0a1512;
+  border: none;
+  font-weight: 700;
+}
+
+.maze-next-btn:hover {
+  background: #7fe3d4;
 }
 
 .maze-trial-btn {
@@ -650,6 +666,49 @@
   padding: 0.5rem 0.8rem;
   font-size: 0.7rem;
   color: #7c8590;
+}
+
+.budget-remaining {
+  color: #7c8590;
+}
+
+.budget-low {
+  color: #e0524a;
+  font-weight: 700;
+}
+
+.fail-banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 1.6rem 2rem;
+  max-width: 420px;
+  text-align: center;
+  border-color: rgba(224, 82, 74, 0.4);
+}
+
+.fail-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #e0524a;
+  margin-bottom: 0.6rem;
+}
+
+.fail-body {
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: #b8b4a8;
+  margin-bottom: 1.1rem;
+}
+
+.fail-retry-btn {
+  background: #e0524a;
+  color: #200705;
+}
+
+.fail-retry-btn:hover {
+  background: #ea6b64;
 }
 
 .win-banner {

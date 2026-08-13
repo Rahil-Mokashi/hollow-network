@@ -27,6 +27,8 @@ interface GameState {
   optimalHops: number | null;
   won: boolean;
   travelAnim: TravelAnim | null;
+  failed: boolean;
+  failReason: "stuck" | "budget" | null;
 
   // BFS Torch (Act II)
   torchUsed: boolean;
@@ -89,6 +91,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   optimalHops: computeOptimal(ACT1),
   won: false,
   travelAnim: null,
+  failed: false,
+  failReason: null,
 
   torchUsed: false,
   torchPulseAt: null,
@@ -117,6 +121,8 @@ export const useGameStore = create<GameState>((set, get) => ({
       optimalHops: computeOptimal(level),
       won: false,
       travelAnim: null,
+      failed: false,
+      failReason: null,
       dfsPath: [level.startId],
       rewindCharges: level.rewindCharges ?? 0,
       visitedThisLoop: new Set([level.startId]),
@@ -128,8 +134,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     }),
 
   canTravelTo: (nodeId) => {
-    const { level, graph, currentNodeId, revealedNodeIds, travelAnim, dfsPath, rewindCharges } = get();
-    if (travelAnim) return false;
+    const { level, graph, currentNodeId, revealedNodeIds, travelAnim, dfsPath, rewindCharges, failed } = get();
+    if (travelAnim || failed) return false;
     if (!graph.hasEdge(currentNodeId, nodeId)) return false;
 
     // BFS Torch is the only ability that gates movement behind an explicit
@@ -222,10 +228,21 @@ export const useGameStore = create<GameState>((set, get) => ({
     }
 
     set(patch);
+
+    if (!won) {
+      const after = get();
+      if (after.level.moveBudget && after.hopsTaken >= after.level.moveBudget) {
+        set({ failed: true, failReason: "budget" });
+      } else if (after.level.ability === "dfsGrapple") {
+        const canMove = after.graph.neighbors(after.currentNodeId).some((n) => after.canTravelTo(n));
+        if (!canMove) set({ failed: true, failReason: "stuck" });
+      }
+    }
   },
 
   triggerAbility: () => {
-    const { level, graph, currentNodeId, revealedNodeIds } = get();
+    const { level, graph, currentNodeId, revealedNodeIds, failed } = get();
+    if (failed) return;
 
     if (level.ability === "bfsTorch") {
       set({ torchPulseAt: Date.now(), torchUsed: true });

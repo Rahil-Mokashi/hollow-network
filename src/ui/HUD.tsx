@@ -109,6 +109,8 @@ export function HUD() {
   const rewindCharges = useGameStore((s) => s.rewindCharges);
   const loopRepeats = useGameStore((s) => s.loopRepeats);
   const currentNodeId = useGameStore((s) => s.currentNodeId);
+  const failed = useGameStore((s) => s.failed);
+  const failReason = useGameStore((s) => s.failReason);
 
   const showAbilityButton = level.ability === "bfsTorch" || level.ability === "unionFindKey";
   const unionReady = level.ability === "unionFindKey" && level.bridge && currentNodeId === level.bridge.a;
@@ -127,6 +129,12 @@ export function HUD() {
               <span className="hop-value">{hopsTaken}</span>
               <span className="hop-sep">/</span>
               <span className="hop-optimal">{optimalHops} hops (best)</span>
+              {level.moveBudget && (
+                <span className={"budget-remaining" + (level.moveBudget - hopsTaken <= 2 ? " budget-low" : "")}>
+                  {" "}
+                  · {Math.max(level.moveBudget - hopsTaken, 0)} left before failure
+                </span>
+              )}
             </div>
           )}
           <div className="act-pips">
@@ -167,7 +175,7 @@ export function HUD() {
         </div>
       )}
 
-      {showAbilityButton && !won && (
+      {showAbilityButton && !won && !failed && (
         <button
           className="ability-btn"
           onClick={triggerAbility}
@@ -176,6 +184,20 @@ export function HUD() {
           <span className="ability-key">E</span> {ABILITY_LABEL[level.ability]}
           {level.ability === "unionFindKey" && !unionReady ? " (reach the Pylon)" : ""}
         </button>
+      )}
+
+      {failed && (
+        <div className="panel fail-banner">
+          <div className="fail-title">{failReason === "budget" ? "Out of moves" : "Stranded"}</div>
+          <div className="fail-body">
+            {failReason === "budget"
+              ? `You ran out of moves before reaching the goal. The optimal route was only ${optimalHops} hops.`
+              : "No legal move remains — every rewind charge is spent and the only way forward is blocked. This chamber can't be escaped from here."}
+          </div>
+          <button className="continue-btn fail-retry-btn" onClick={restartLevel}>
+            Retry
+          </button>
+        </div>
       )}
 
       {won && !wonFinale && (

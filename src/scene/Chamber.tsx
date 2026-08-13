@@ -11,6 +11,7 @@ const TEAL_AVAILABLE = new THREE.Color("#5fd6c4");
 const PALE_DISTANT = new THREE.Color("#7fb8c9");
 const VIOLET = new THREE.Color("#b48cff");
 const BASALT = new THREE.Color("#0c0c0e");
+const RING_NEUTRAL = new THREE.Color("#f0ede4");
 
 interface ChamberProps {
   id: string;
@@ -24,6 +25,8 @@ export function Chamber({ id, position, seed, distant = false }: ChamberProps) {
   const materialRef = useRef<THREE.MeshStandardMaterial>(null);
   const lightRef = useRef<THREE.PointLight>(null);
   const groupRef = useRef<THREE.Group>(null);
+  const ringRef = useRef<THREE.Mesh>(null);
+  const ringMaterialRef = useRef<THREE.MeshBasicMaterial>(null);
 
   const currentNodeId = useGameStore((s) => s.currentNodeId);
   const revealedNodeIds = useGameStore((s) => s.revealedNodeIds);
@@ -75,6 +78,26 @@ export function Chamber({ id, position, seed, distant = false }: ChamberProps) {
       lightRef.current.intensity = 0.25;
       lightRef.current.color.copy(COLD_BLUE);
     }
+
+    // A shape cue independent of hue: whether you can act on this chamber
+    // right now reads from ring presence and motion, not just color, so the
+    // "can I click this" decision doesn't rely on color vision at all.
+    if (ringRef.current && ringMaterialRef.current) {
+      if (!distant && isCurrent) {
+        ringRef.current.visible = true;
+        ringRef.current.rotation.z = clock.elapsedTime * 0.6;
+        ringRef.current.scale.setScalar(1);
+        ringMaterialRef.current.opacity = 0.85;
+      } else if (!distant && isAvailable) {
+        const breathe = 0.9 + Math.sin(clock.elapsedTime * 3.5) * 0.12;
+        ringRef.current.visible = true;
+        ringRef.current.rotation.z = 0;
+        ringRef.current.scale.setScalar(breathe);
+        ringMaterialRef.current.opacity = 0.5;
+      } else {
+        ringRef.current.visible = false;
+      }
+    }
   });
 
   return (
@@ -102,6 +125,10 @@ export function Chamber({ id, position, seed, distant = false }: ChamberProps) {
         />
       </mesh>
       <pointLight ref={lightRef} distance={9} decay={2} />
+      <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]} visible={false}>
+        <torusGeometry args={[2.05, 0.05, 8, 40]} />
+        <meshBasicMaterial ref={ringMaterialRef} color={RING_NEUTRAL} transparent opacity={0} />
+      </mesh>
     </group>
   );
 }
