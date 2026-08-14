@@ -29,6 +29,7 @@ export function MazeUI() {
   const trialIndex = useMazeStore((s) => s.trialIndex);
   const returnToTitle = useGameStore((s) => s.returnToTitle);
   const enterArchive = useGameStore((s) => s.enterArchive);
+  const enterSort = useGameStore((s) => s.enterSort);
 
   const [now, setNow] = useState(() => Date.now());
 
@@ -145,6 +146,9 @@ export function MazeUI() {
         )}
         <button className="continue-btn maze-archive-btn" onClick={enterArchive}>
           Try the Archive (BST) →
+        </button>
+        <button className="continue-btn maze-sort-btn" onClick={enterSort}>
+          Try SortCraft →
         </button>
         <button className="continue-btn continue-btn-secondary maze-finish-btn" onClick={returnToTitle}>
           Return to Title

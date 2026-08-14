@@ -15,6 +15,7 @@ function FinaleSummary() {
   const returnToTitle = useGameStore((s) => s.returnToTitle);
   const enterMaze = useGameStore((s) => s.enterMaze);
   const enterArchive = useGameStore((s) => s.enterArchive);
+  const enterSort = useGameStore((s) => s.enterSort);
 
   const [result, setResult] = useState<{ best: BestRun; isNewBest: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -96,6 +97,9 @@ function FinaleSummary() {
         </button>
         <button className="maze-trial-btn archive-trial-btn" onClick={enterArchive}>
           Bonus Trial: The Archive (BST) →
+        </button>
+        <button className="maze-trial-btn sort-trial-btn" onClick={enterSort}>
+          Bonus Trial: SortCraft →
         </button>
       </div>
     </div>

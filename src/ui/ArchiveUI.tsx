@@ -15,6 +15,7 @@ export function ArchiveUI() {
   const reset = useArchiveStore((s) => s.reset);
   const returnToTitle = useGameStore((s) => s.returnToTitle);
   const enterMaze = useGameStore((s) => s.enterMaze);
+  const enterSort = useGameStore((s) => s.enterSort);
 
   const [feedbackFlash, setFeedbackFlash] = useState(false);
   const [notFoundFlash, setNotFoundFlash] = useState(false);
@@ -126,6 +127,9 @@ export function ArchiveUI() {
             </button>
             <button className="continue-btn continue-btn-secondary" onClick={enterMaze}>
               Try the Maze (A*)
+            </button>
+            <button className="continue-btn continue-btn-secondary" onClick={enterSort}>
+              Try SortCraft
             </button>
           </div>
         </div>

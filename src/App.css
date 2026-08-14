@@ -695,6 +695,26 @@
   background: rgba(180, 140, 255, 0.12);
 }
 
+.sort-trial-btn {
+  border-color: #ffb066;
+  color: #ffb066;
+}
+
+.sort-trial-btn:hover {
+  background: rgba(255, 176, 102, 0.12);
+}
+
+.maze-sort-btn {
+  background: #ffb066;
+  color: #1a1005;
+  border: none;
+  font-weight: 700;
+}
+
+.maze-sort-btn:hover {
+  background: #ffc488;
+}
+
 .archive-top-bar {
   max-width: 560px;
 }

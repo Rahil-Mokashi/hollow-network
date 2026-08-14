@@ -110,16 +110,37 @@ function Edge({ from, to }: { from: [number, number, number]; to: [number, numbe
   );
 }
 
-function GhostSlot({ position }: { position: [number, number, number] }) {
+function GhostSlot({ position, direction }: { position: [number, number, number]; direction: "left" | "right" }) {
   const ref = useRef<THREE.Mesh>(null);
+  const hovered = useRef(false);
+  const chooseDirection = useArchiveStore((s) => s.chooseDirection);
+
   useFrame(({ clock }) => {
     if (ref.current) {
-      const pulse = 0.3 + Math.sin(clock.elapsedTime * 3) * 0.15;
+      const base = hovered.current ? 0.55 : 0.3;
+      const pulse = base + Math.sin(clock.elapsedTime * 3) * 0.15;
       (ref.current.material as THREE.MeshBasicMaterial).opacity = pulse;
     }
   });
+
   return (
-    <mesh ref={ref} position={position}>
+    <mesh
+      ref={ref}
+      position={position}
+      onClick={(e) => {
+        e.stopPropagation();
+        chooseDirection(direction);
+      }}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        hovered.current = true;
+        document.body.style.cursor = "pointer";
+      }}
+      onPointerOut={() => {
+        hovered.current = false;
+        document.body.style.cursor = "default";
+      }}
+    >
       <icosahedronGeometry args={[0.9, 1]} />
       <meshBasicMaterial color={VIOLET} transparent opacity={0.3} wireframe />
     </mesh>
@@ -173,11 +194,11 @@ export function ArchiveScene() {
   const cursorPos = positions.get(cursorId) ?? [0, 0, 0];
   const cursorNode = tree.nodes.get(cursorId);
 
-  const ghostSlots: [number, number, number][] = [];
+  const ghostSlots: { position: [number, number, number]; direction: "left" | "right" }[] = [];
   if (cursorNode) {
     const [cx, , cz] = cursorPos as [number, number, number];
-    if (cursorNode.left === null) ghostSlots.push([cx - X_SPACING / 2, 0, cz + Z_SPACING]);
-    if (cursorNode.right === null) ghostSlots.push([cx + X_SPACING / 2, 0, cz + Z_SPACING]);
+    if (cursorNode.left === null) ghostSlots.push({ position: [cx - X_SPACING / 2, 0, cz + Z_SPACING], direction: "left" });
+    if (cursorNode.right === null) ghostSlots.push({ position: [cx + X_SPACING / 2, 0, cz + Z_SPACING], direction: "right" });
   }
 
   return (
@@ -195,8 +216,8 @@ export function ArchiveScene() {
       {edges.map((e, i) => (
         <Edge key={i} from={e.from} to={e.to} />
       ))}
-      {ghostSlots.map((pos, i) => (
-        <GhostSlot key={i} position={pos} />
+      {ghostSlots.map((slot, i) => (
+        <GhostSlot key={i} position={slot.position} direction={slot.direction} />
       ))}
     </>
   );

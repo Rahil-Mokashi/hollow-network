@@ -1,11 +1,12 @@
 # The Hollow Network
 
 A complete 3D web game where the level *is* a graph data structure, played
-across an eight-stage campaign and capped off with two bonus trials — A*
-pathfinding and binary search trees. Chambers are nodes, corridors are
-edges, and every ability you earn — the BFS Torch, the DFS Grapple, the
-Cycle Ward, the Union-Find Key, A* itself, and BST insert/search — is a
-real, correctly-implemented algorithm, not a visual approximation of one.
+across an eight-stage campaign and capped off with three bonus trials —
+A* pathfinding, binary search trees, and sorting. Chambers are nodes,
+corridors are edges, and every ability you earn — the BFS Torch, the DFS
+Grapple, the Cycle Ward, the Union-Find Key, A* itself, BST insert/search,
+and two sorting algorithms — is a real, correctly-implemented algorithm,
+not a visual approximation of one.
 
 Built with React Three Fiber (Three.js), TypeScript, and Zustand, with the
 graph and pathfinding algorithms written as pure, framework-free,
@@ -29,7 +30,7 @@ Network** to begin.
 npm run test
 ```
 
-55 tests, zero dependency on rendering: BFS (traversal order, shortest-path,
+73 tests, zero dependency on rendering: BFS (traversal order, shortest-path,
 one-ring reveal), DFS (stack push/pop correctness, path-finding), cycle
 detection (true positives, and no false positives from walking back to a
 parent), union-find (component merging, path compression), every level's
@@ -46,7 +47,12 @@ shortest path), and BST (in-order traversal is sorted order for *any*
 insertion sequence — the one property that makes it a search tree at all —
 search correctly reports both found and legitimately-not-found values, and
 the game's own step-by-step attach-by-attach play matches what a direct
-insert would have produced).
+insert would have produced), and sorting (bubble sort and merge sort both
+produce the exact same correctly-sorted output for random, sorted,
+reverse-sorted, duplicate-heavy, single-element, and empty input, and —
+the actual point of that trial — merge sort's comparison count grows
+asymptotically slower than bubble sort's as the array size doubles, not
+just "is smaller once").
 
 ## Controls
 
@@ -140,6 +146,21 @@ payoff at the end is the in-order traversal of the tree you actually built,
 read out loud: it's always sorted, for any sequence you insert, which is
 the entire reason a binary search tree is a search tree.
 
+## Bonus Trial — SortCraft
+
+Reachable from the Maze, the Archive, or the Act V finale screen. The most
+purely visual of the three trials, and deliberately styled differently from
+the rest of the game — crystal pillars in a row instead of chambers in a
+graph, so it reads as its own thing rather than another skin on the same
+mechanic. The same eight-value row gets sorted two ways: **Bubble Sort**
+(only ever compares neighbors, swaps when they're out of order) and
+**Merge Sort** (splits the row in half recursively, sorts each half, merges
+them back together). Pillars flash teal on a comparison and gold on a
+write, in the real order the algorithm actually performed them, and the
+comparison panel states the real gap in operation counts — small on eight
+values, but the accompanying test proves the *growth rate* itself differs,
+which is the actual reason one is called O(n²) and the other O(n log n).
+
 ## Real stakes, not just a retroactive grade
 
 Two failure states, each with a real consequence and a Retry, not merely a
@@ -198,23 +219,24 @@ one-line summary on the clipboard.
 
 ```
 src/graph/   pure TypeScript — Graph model, bfs, dfs, cycleDetect,
-             unionFind, astar, bst, and the full Vitest suite. No React or
-             Three.js imports anywhere in this folder, by design.
+             unionFind, astar, bst, sort, and the full Vitest suite. No
+             React or Three.js imports anywhere in this folder, by design.
 src/scene/   React Three Fiber components that read graph/game state and
              render it — chambers, corridors, fog-of-war particles, the
              island-drift group, the title backdrop, the maze grid, the
-             BST tree layout, the camera rigs (including the travel
-             flythrough). Never mutates state directly (except two
-             deliberate, real mutations: the Union-Find Key adding the
+             BST tree layout, the sort pillars, the camera rigs (including
+             the travel flythrough). Never mutates state directly (except
+             two deliberate, real mutations: the Union-Find Key adding the
              bridge edge, and the Archive's tree growing by insertion).
 src/game/    level data — eight campaign stages, the seeded maze generator
-             (two trials), and the Archive's insert/search sequence — the
-             Zustand store tying player position, revealed nodes, run
-             stats, failure state, and every act's ability-specific state
-             together, plus score.ts for grading and best-run persistence.
+             (two trials), the Archive's insert/search sequence, and
+             SortCraft's fixed row — the Zustand store tying player
+             position, revealed nodes, run stats, failure state, and every
+             act's ability-specific state together, plus score.ts for
+             grading and best-run persistence.
 src/ui/      HUD, the literal node-edge minimap, the live Algorithm Trace
              panel, the Field Notes codex, the title screen, the failure/
-             retry banner, and both bonus trials' controls.
+             retry banner, and all three bonus trials' controls.
 src/audio/   procedural Web Audio sound design, no external files.
 ```
 
@@ -228,3 +250,4 @@ src/audio/   procedural Web Audio sound design, no external files.
 | Union-find / connectivity | Union-Find Key ability, Act V |
 | A* search + heuristic design (vs. Dijkstra) | Bonus Trial — The Maze (2 trials) |
 | Binary search tree insert / search | Bonus Trial — The Archive |
+| Bubble sort vs. merge sort | Bonus Trial — SortCraft |
