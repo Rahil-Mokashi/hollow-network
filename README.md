@@ -212,8 +212,17 @@ one-line summary on the clipboard.
   (jittered icosahedra, swept tubes) and post-processing.
 - All sound (torch chime, travel whoosh, DFS commit/rewind tones, the
   déjà-vu sub-bass thump, the victory fanfare, the union-find swell, the
-  maze scan sweep) is synthesized at runtime via the Web Audio API in
-  `src/audio/sound.ts`.
+  maze scan sweep, a soft hover tick on anything clickable) is synthesized
+  at runtime via the Web Audio API in `src/audio/sound.ts` — no audio
+  files anywhere in the project.
+- A continuously evolving ambient bed runs under every screen: two detuned
+  oscillators a fifth apart, breathing slowly via a sub-Hz LFO, crossfading
+  to a different base pitch depending on which act's ability is active (or
+  which bonus trial you're in) — never a hard cut, always a 1.4-second
+  fade. A volume slider and mute toggle sit in the bottom-right corner on
+  every screen, persisted to `localStorage` and routed through a single
+  master gain node that every sound in the game — ambient and one-shot
+  alike — passes through.
 
 ## Architecture
 
@@ -233,11 +242,14 @@ src/game/    level data — eight campaign stages, the seeded maze generator
              SortCraft's fixed row — the Zustand store tying player
              position, revealed nodes, run stats, failure state, and every
              act's ability-specific state together, plus score.ts for
-             grading and best-run persistence.
+             grading and best-run persistence, and audioStore.ts for the
+             mute/volume UI state.
 src/ui/      HUD, the literal node-edge minimap, the live Algorithm Trace
              panel, the Field Notes codex, the title screen, the failure/
-             retry banner, and all three bonus trials' controls.
-src/audio/   procedural Web Audio sound design, no external files.
+             retry banner, the persistent volume/mute control, and all
+             three bonus trials' controls.
+src/audio/   procedural Web Audio sound design — one-shot cues and the
+             continuously evolving ambient bed — no external files.
 ```
 
 ## Algorithms taught

@@ -14,7 +14,11 @@ import { TitleScreen } from "./ui/TitleScreen";
 import { MazeUI } from "./ui/MazeUI";
 import { ArchiveUI } from "./ui/ArchiveUI";
 import { SortUI } from "./ui/SortUI";
+import { AudioToggle } from "./ui/AudioToggle";
 import { useGameStore } from "./game/store";
+import { setAmbientProfile } from "./audio/sound";
+import type { AmbientProfile } from "./audio/sound";
+import type { Ability } from "./game/levels";
 import "./App.css";
 
 const CAMERA_BY_SCREEN: Record<string, { position: [number, number, number]; fov: number }> = {
@@ -24,6 +28,20 @@ const CAMERA_BY_SCREEN: Record<string, { position: [number, number, number]; fov
   archive: { position: [0, 12, 16], fov: 48 },
   sort: { position: [0, 9, 14], fov: 48 },
 };
+
+const ABILITY_TO_PROFILE: Record<Ability, AmbientProfile> = {
+  none: "entrance",
+  bfsTorch: "bfs",
+  dfsGrapple: "dfs",
+  cycleWard: "cycle",
+  unionFindKey: "unionfind",
+};
+
+function resolveAmbientProfile(screen: string, ability: Ability): AmbientProfile {
+  if (screen === "playing") return ABILITY_TO_PROFILE[ability];
+  if (screen === "maze" || screen === "archive" || screen === "sort") return screen;
+  return "title";
+}
 
 function App() {
   const screen = useGameStore((s) => s.screen);
@@ -49,6 +67,10 @@ function App() {
     const timer = setTimeout(() => setDejaVuFlash(false), 900);
     return () => clearTimeout(timer);
   }, [dejaVuAt]);
+
+  useEffect(() => {
+    setAmbientProfile(resolveAmbientProfile(screen, level.ability));
+  }, [screen, level.ability]);
 
   return (
     <div className="app-root">
@@ -86,6 +108,8 @@ function App() {
       {screen === "maze" && <MazeUI />}
       {screen === "archive" && <ArchiveUI />}
       {screen === "sort" && <SortUI />}
+
+      <AudioToggle />
     </div>
   );
 }

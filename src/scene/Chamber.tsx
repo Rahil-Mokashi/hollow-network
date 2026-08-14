@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { organicChamberGeometry } from "./geometry";
 import { useGameStore } from "../game/store";
+import { playHover } from "../audio/sound";
 
 const COLD_BLUE = new THREE.Color("#2e6f9e");
 const AMBER = new THREE.Color("#c8894a");
@@ -110,7 +111,10 @@ export function Chamber({ id, position, seed, distant = false }: ChamberProps) {
         }}
         onPointerOver={(e) => {
           e.stopPropagation();
-          if (canTravelTo) document.body.style.cursor = "pointer";
+          if (canTravelTo) {
+            document.body.style.cursor = "pointer";
+            playHover();
+          }
         }}
         onPointerOut={() => {
           document.body.style.cursor = "default";

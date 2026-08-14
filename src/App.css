@@ -872,6 +872,62 @@
   pointer-events: auto;
 }
 
+.audio-toggle {
+  position: absolute;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.8rem;
+  z-index: 20;
+}
+
+.audio-mute-btn {
+  background: transparent;
+  border: none;
+  color: #b8b4a8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0.15rem;
+  transition: color 0.15s ease;
+}
+
+.audio-mute-btn:hover {
+  color: #ffb066;
+}
+
+.audio-volume-slider {
+  width: 80px;
+  height: 3px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(184, 180, 168, 0.25);
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+}
+
+.audio-volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #ffb066;
+  cursor: pointer;
+}
+
+.audio-volume-slider::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #ffb066;
+  border: none;
+  cursor: pointer;
+}
+
 .controls-hint {
   position: absolute;
   bottom: 1.25rem;

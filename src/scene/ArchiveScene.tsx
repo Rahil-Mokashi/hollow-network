@@ -6,6 +6,7 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { organicChamberGeometry, corridorCurve } from "./geometry";
 import { useArchiveStore } from "../game/archiveStore";
 import type { BST } from "../graph/bst";
+import { playHover } from "../audio/sound";
 
 const X_SPACING = 4.2;
 const Z_SPACING = 5.5;
@@ -135,6 +136,7 @@ function GhostSlot({ position, direction }: { position: [number, number, number]
         e.stopPropagation();
         hovered.current = true;
         document.body.style.cursor = "pointer";
+        playHover();
       }}
       onPointerOut={() => {
         hovered.current = false;
