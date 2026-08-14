@@ -14,6 +14,7 @@ function FinaleSummary() {
   const runDejaVu = useGameStore((s) => s.runDejaVu);
   const returnToTitle = useGameStore((s) => s.returnToTitle);
   const enterMaze = useGameStore((s) => s.enterMaze);
+  const enterArchive = useGameStore((s) => s.enterArchive);
 
   const [result, setResult] = useState<{ best: BestRun; isNewBest: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
@@ -89,9 +90,14 @@ function FinaleSummary() {
         </button>
       </div>
 
-      <button className="maze-trial-btn" onClick={enterMaze}>
-        Bonus Trial: The Maze (A*) →
-      </button>
+      <div className="bonus-trial-row">
+        <button className="maze-trial-btn" onClick={enterMaze}>
+          Bonus Trial: The Maze (A*) →
+        </button>
+        <button className="maze-trial-btn archive-trial-btn" onClick={enterArchive}>
+          Bonus Trial: The Archive (BST) →
+        </button>
+      </div>
     </div>
   );
 }

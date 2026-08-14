@@ -520,6 +520,11 @@
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
+.heuristic-toggle-3 .heuristic-btn {
+  font-size: 0.62rem;
+  padding: 0.5rem 0.25rem;
+}
+
 .heuristic-btn-active {
   background: rgba(255, 176, 102, 0.15);
   border-color: #ffb066;
@@ -595,6 +600,21 @@
   background: #c9527a;
 }
 
+.comparison-bar-dijkstra {
+  background: #8a93a0;
+}
+
+.maze-archive-btn {
+  background: #b48cff;
+  color: #170a2e;
+  border: none;
+  font-weight: 700;
+}
+
+.maze-archive-btn:hover {
+  background: #c6a6ff;
+}
+
 .comparison-count {
   font-size: 0.72rem;
   color: #ece9e0;
@@ -657,6 +677,179 @@
 
 .maze-trial-btn:hover {
   background: rgba(95, 214, 196, 0.12);
+}
+
+.bonus-trial-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.archive-trial-btn {
+  border-color: #b48cff;
+  color: #b48cff;
+}
+
+.archive-trial-btn:hover {
+  background: rgba(180, 140, 255, 0.12);
+}
+
+.archive-top-bar {
+  max-width: 560px;
+}
+
+.archive-prompt {
+  position: absolute;
+  top: 7.5rem;
+  left: 1.25rem;
+  padding: 1.1rem 1.3rem;
+  width: 280px;
+  text-align: center;
+}
+
+.archive-compare {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.7rem;
+  margin-bottom: 0.4rem;
+}
+
+.archive-target,
+.archive-cursor {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #ffb066;
+}
+
+.archive-vs {
+  font-size: 0.7rem;
+  color: #7c8590;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.archive-question {
+  font-size: 0.76rem;
+  color: #b8b4a8;
+  margin-bottom: 0.5rem;
+}
+
+.archive-feedback {
+  font-size: 0.72rem;
+  font-weight: 700;
+  height: 1.1rem;
+  margin-bottom: 0.4rem;
+  color: transparent;
+}
+
+.archive-feedback-correct {
+  color: #5fd6c4;
+}
+
+.archive-feedback-wrong {
+  color: #e0524a;
+}
+
+.archive-buttons {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.archive-dir-btn {
+  flex: 1;
+  background: rgba(180, 140, 255, 0.12);
+  border: 1px solid #b48cff;
+  color: #d9c6ff;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 0.65rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.archive-dir-btn:hover {
+  background: rgba(180, 140, 255, 0.24);
+}
+
+.archive-not-found {
+  margin-top: 0.6rem;
+  font-size: 0.68rem;
+  color: #e0524a;
+  line-height: 1.5;
+}
+
+.archive-progress {
+  position: absolute;
+  top: 7.5rem;
+  right: 1.25rem;
+  width: 260px;
+  padding: 0.9rem 1.1rem;
+}
+
+.archive-queue {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.5rem 0;
+}
+
+.archive-chip {
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+  font-size: 0.72rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #7c8590;
+  border: 1px solid rgba(184, 180, 168, 0.2);
+}
+
+.archive-chip-done {
+  color: #5fd6c4;
+  border-color: rgba(95, 214, 196, 0.4);
+}
+
+.archive-chip-active {
+  color: #ffb066;
+  border-color: #ffb066;
+  font-weight: 700;
+}
+
+.archive-mistakes {
+  font-size: 0.7rem;
+  color: #7c8590;
+  margin-top: 0.3rem;
+}
+
+.archive-done-banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 1.6rem 2rem;
+  max-width: 440px;
+  text-align: center;
+}
+
+.archive-inorder {
+  margin: 1rem 0;
+}
+
+.archive-inorder-values {
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+  font-size: 0.85rem;
+  color: #5fd6c4;
+  margin-top: 0.4rem;
+}
+
+.archive-finish-btn {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: auto;
 }
 
 .controls-hint {

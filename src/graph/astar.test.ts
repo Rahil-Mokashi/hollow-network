@@ -19,6 +19,10 @@ describe("heuristicDistance", () => {
   it("Euclidean never overestimates Manhattan on a grid (both are admissible, but Manhattan is tighter)", () => {
     expect(heuristicDistance("euclidean", [2, 5], [7, 1])).toBeLessThanOrEqual(heuristicDistance("manhattan", [2, 5], [7, 1]));
   });
+
+  it("Dijkstra (no heuristic) is always zero, the loosest possible lower bound", () => {
+    expect(heuristicDistance("dijkstra", [2, 5], [7, 1])).toBe(0);
+  });
 });
 
 describe("astar on an open grid", () => {
@@ -84,5 +88,19 @@ describe.each(MAZE_TRIALS)("hand-designed maze: $label", (trial) => {
     const manhattanResult = astar(grid, start, goal, "manhattan");
     const euclideanResult = astar(grid, start, goal, "euclidean");
     expect(manhattanResult.expandedCount).toBeLessThanOrEqual(euclideanResult.expandedCount);
+  });
+
+  it("Dijkstra expands at least as many nodes as either A* heuristic — a guess beats no guess", () => {
+    const dijkstraResult = astar(grid, start, goal, "dijkstra");
+    const manhattanResult = astar(grid, start, goal, "manhattan");
+    const euclideanResult = astar(grid, start, goal, "euclidean");
+    expect(dijkstraResult.expandedCount).toBeGreaterThanOrEqual(manhattanResult.expandedCount);
+    expect(dijkstraResult.expandedCount).toBeGreaterThanOrEqual(euclideanResult.expandedCount);
+  });
+
+  it("all three strategies still agree on the true shortest path length", () => {
+    const dijkstraResult = astar(grid, start, goal, "dijkstra");
+    const manhattanResult = astar(grid, start, goal, "manhattan");
+    expect(dijkstraResult.path!.length).toBe(manhattanResult.path!.length);
   });
 });

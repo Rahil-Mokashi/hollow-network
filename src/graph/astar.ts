@@ -6,7 +6,11 @@ export interface GridSpec {
   walls: Set<string>;
 }
 
-export type Heuristic = "manhattan" | "euclidean";
+// "dijkstra" is not really a heuristic — it's the deliberate absence of
+// one (h(n) = 0 for every cell). Modeling it as a third Heuristic value
+// keeps astar() itself completely unchanged: Dijkstra's algorithm IS just
+// A* with a heuristic that never guesses.
+export type Heuristic = "manhattan" | "euclidean" | "dijkstra";
 
 export function cellKey(r: number, c: number): string {
   return `${r},${c}`;
@@ -17,6 +21,7 @@ export function isWalkable(grid: GridSpec, r: number, c: number): boolean {
 }
 
 export function heuristicDistance(type: Heuristic, a: Cell, b: Cell): number {
+  if (type === "dijkstra") return 0;
   const dr = Math.abs(a[0] - b[0]);
   const dc = Math.abs(a[1] - b[1]);
   return type === "manhattan" ? dr + dc : Math.sqrt(dr * dr + dc * dc);

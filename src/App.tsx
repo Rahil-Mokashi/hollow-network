@@ -4,12 +4,14 @@ import { EffectComposer, Bloom, Vignette, ChromaticAberration } from "@react-thr
 import { Scene } from "./scene/Scene";
 import { TitleBackdrop } from "./scene/TitleBackdrop";
 import { MazeScene } from "./scene/MazeScene";
+import { ArchiveScene } from "./scene/ArchiveScene";
 import { HUD } from "./ui/HUD";
 import { Minimap } from "./ui/Minimap";
 import { FieldNotes } from "./ui/FieldNotes";
 import { AlgorithmTrace } from "./ui/AlgorithmTrace";
 import { TitleScreen } from "./ui/TitleScreen";
 import { MazeUI } from "./ui/MazeUI";
+import { ArchiveUI } from "./ui/ArchiveUI";
 import { useGameStore } from "./game/store";
 import "./App.css";
 
@@ -17,6 +19,7 @@ const CAMERA_BY_SCREEN: Record<string, { position: [number, number, number]; fov
   title: { position: [0, 9, 11], fov: 45 },
   playing: { position: [0, 9, 11], fov: 45 },
   maze: { position: [0, 24, 20], fov: 50 },
+  archive: { position: [0, 12, 16], fov: 48 },
 };
 
 function App() {
@@ -50,6 +53,7 @@ function App() {
         {screen === "title" && <TitleBackdrop />}
         {screen === "playing" && <Scene />}
         {screen === "maze" && <MazeScene />}
+        {screen === "archive" && <ArchiveScene />}
         <EffectComposer>
           <Bloom intensity={1.1} luminanceThreshold={0.15} luminanceSmoothing={0.4} mipmapBlur />
           <Vignette eskil={false} offset={0.25} darkness={0.65} />
@@ -76,6 +80,7 @@ function App() {
       )}
 
       {screen === "maze" && <MazeUI />}
+      {screen === "archive" && <ArchiveUI />}
     </div>
   );
 }

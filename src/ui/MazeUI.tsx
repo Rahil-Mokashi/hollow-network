@@ -4,9 +4,18 @@ import { MAZE_TRIALS } from "../game/maze";
 import { useGameStore } from "../game/store";
 import type { Heuristic } from "../graph/astar";
 
-const HEURISTIC_LABEL: Record<Heuristic, string> = {
+const STRATEGIES: Heuristic[] = ["dijkstra", "manhattan", "euclidean"];
+
+const STRATEGY_LABEL: Record<Heuristic, string> = {
+  dijkstra: "Dijkstra",
   manhattan: "Manhattan",
   euclidean: "Euclidean",
+};
+
+const STRATEGY_BAR_CLASS: Record<Heuristic, string> = {
+  dijkstra: "comparison-bar-dijkstra",
+  manhattan: "comparison-bar-manhattan",
+  euclidean: "comparison-bar-euclidean",
 };
 
 export function MazeUI() {
@@ -19,6 +28,7 @@ export function MazeUI() {
   const advanceTrial = useMazeStore((s) => s.advanceTrial);
   const trialIndex = useMazeStore((s) => s.trialIndex);
   const returnToTitle = useGameStore((s) => s.returnToTitle);
+  const enterArchive = useGameStore((s) => s.enterArchive);
 
   const [now, setNow] = useState(() => Date.now());
 
@@ -34,11 +44,14 @@ export function MazeUI() {
   const solving = elapsedMs < MAZE_ANIM_DURATION_MS;
   const pathLength = result.path ? result.path.length - 1 : null;
 
-  const manhattanCount = comparisonCounts.manhattan;
-  const euclideanCount = comparisonCounts.euclidean;
-  const bothRun = manhattanCount !== undefined && euclideanCount !== undefined;
+  const counts = STRATEGIES.map((s) => comparisonCounts[s]);
+  const allRun = counts.every((c) => c !== undefined);
+  const maxCount = allRun ? Math.max(...(counts as number[])) : undefined;
   const trial = MAZE_TRIALS[trialIndex];
   const hasNextTrial = trialIndex < MAZE_TRIALS.length - 1;
+
+  const dijkstraCount = comparisonCounts.dijkstra;
+  const manhattanCount = comparisonCounts.manhattan;
 
   return (
     <div className="ui-layer">
@@ -46,22 +59,22 @@ export function MazeUI() {
         <div>
           <div className="level-title">Bonus Trial — The Maze ({trial.label})</div>
           <div className="briefing">
-            A* pathfinding, weighed against itself: the same maze, two heuristics. Watch how much
-            the choice of heuristic changes how much ground the search has to cover.
+            Three ways to search the same maze: no guess at all (Dijkstra), a tight guess
+            (Manhattan), and a looser one (Euclidean). Watch how much the guess is worth.
           </div>
         </div>
       </div>
 
       <div className="panel maze-controls">
-        <span className="panel-label">Heuristic</span>
-        <div className="heuristic-toggle">
-          {(Object.keys(HEURISTIC_LABEL) as Heuristic[]).map((h) => (
+        <span className="panel-label">Strategy</span>
+        <div className="heuristic-toggle heuristic-toggle-3">
+          {STRATEGIES.map((h) => (
             <button
               key={h}
               className={"heuristic-btn" + (heuristic === h ? " heuristic-btn-active" : "")}
               onClick={() => setHeuristic(h)}
             >
-              {HEURISTIC_LABEL[h]}
+              {STRATEGY_LABEL[h]}
             </button>
           ))}
         </div>
@@ -72,7 +85,7 @@ export function MazeUI() {
 
       <div className="panel algo-trace maze-trace">
         <div className="panel-label">
-          A* Trace <span className="live-dot" />
+          Search Trace <span className="live-dot" />
         </div>
         <div className="trace-line">
           <span className="trace-key">f(n) = g(n) + h(n)</span>
@@ -96,41 +109,43 @@ export function MazeUI() {
       </div>
 
       <div className="panel maze-comparison">
-        <span className="panel-label">Heuristic Comparison</span>
-        <div className="comparison-row">
-          <span className="comparison-label">Manhattan</span>
-          <div className="comparison-bar-track">
-            <div
-              className="comparison-bar comparison-bar-manhattan"
-              style={{ width: bothRun ? `${(manhattanCount! / Math.max(manhattanCount!, euclideanCount!)) * 100}%` : manhattanCount !== undefined ? "100%" : "0%" }}
-            />
-          </div>
-          <span className="comparison-count">{manhattanCount ?? "—"}</span>
-        </div>
-        <div className="comparison-row">
-          <span className="comparison-label">Euclidean</span>
-          <div className="comparison-bar-track">
-            <div
-              className="comparison-bar comparison-bar-euclidean"
-              style={{ width: bothRun ? `${(euclideanCount! / Math.max(manhattanCount!, euclideanCount!)) * 100}%` : euclideanCount !== undefined ? "100%" : "0%" }}
-            />
-          </div>
-          <span className="comparison-count">{euclideanCount ?? "—"}</span>
-        </div>
-        {bothRun && (
+        <span className="panel-label">Strategy Comparison</span>
+        {STRATEGIES.map((s) => {
+          const count = comparisonCounts[s];
+          return (
+            <div className="comparison-row" key={s}>
+              <span className="comparison-label">{STRATEGY_LABEL[s]}</span>
+              <div className="comparison-bar-track">
+                <div
+                  className={"comparison-bar " + STRATEGY_BAR_CLASS[s]}
+                  style={{
+                    width: allRun ? `${(count! / maxCount!) * 100}%` : count !== undefined ? "100%" : "0%",
+                  }}
+                />
+              </div>
+              <span className="comparison-count">{count ?? "—"}</span>
+            </div>
+          );
+        })}
+        {allRun && dijkstraCount !== undefined && manhattanCount !== undefined && (
           <p className="comparison-note">
-            Manhattan matches the maze's real movement cost exactly, so it never explores more than
-            Euclidean does — {euclideanCount! - manhattanCount!} fewer node{euclideanCount! - manhattanCount! === 1 ? "" : "s"} expanded.
+            Dijkstra has no idea where the goal is, so it expands outward evenly in every
+            direction — Manhattan's guess cuts that down by {dijkstraCount - manhattanCount} node
+            {dijkstraCount - manhattanCount === 1 ? "" : "s"}, and still finds the exact same
+            shortest path.
           </p>
         )}
       </div>
 
       <div className="maze-bottom-actions">
-        {bothRun && hasNextTrial && (
+        {allRun && hasNextTrial && (
           <button className="continue-btn maze-next-btn" onClick={advanceTrial}>
             {MAZE_TRIALS[trialIndex + 1].label}: a bigger maze →
           </button>
         )}
+        <button className="continue-btn maze-archive-btn" onClick={enterArchive}>
+          Try the Archive (BST) →
+        </button>
         <button className="continue-btn continue-btn-secondary maze-finish-btn" onClick={returnToTitle}>
           Return to Title
         </button>

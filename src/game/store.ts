@@ -13,7 +13,7 @@ interface TravelAnim {
 }
 
 interface GameState {
-  screen: "title" | "playing" | "maze";
+  screen: "title" | "playing" | "maze" | "archive";
   runStartAt: number | null;
   runHops: number;
   runRewinds: number;
@@ -61,6 +61,7 @@ interface GameState {
   startRun: () => void;
   returnToTitle: () => void;
   enterMaze: () => void;
+  enterArchive: () => void;
 }
 
 function initialReveal(level: LevelDef): Set<string> {
@@ -280,6 +281,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   returnToTitle: () => set({ screen: "title" }),
   enterMaze: () => set({ screen: "maze" }),
+  enterArchive: () => set({ screen: "archive" }),
 }));
 
 export { ACTS };

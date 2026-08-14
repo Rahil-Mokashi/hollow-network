@@ -1,11 +1,11 @@
 # The Hollow Network
 
 A complete 3D web game where the level *is* a graph data structure, played
-across an eight-stage campaign and capped off with a bonus A* pathfinding
-trial. Chambers are nodes, corridors are edges, and every ability you
-earn — the BFS Torch, the DFS Grapple, the Cycle Ward, the Union-Find Key,
-and finally A* itself — is a real, correctly-implemented algorithm, not a
-visual approximation of one.
+across an eight-stage campaign and capped off with two bonus trials — A*
+pathfinding and binary search trees. Chambers are nodes, corridors are
+edges, and every ability you earn — the BFS Torch, the DFS Grapple, the
+Cycle Ward, the Union-Find Key, A* itself, and BST insert/search — is a
+real, correctly-implemented algorithm, not a visual approximation of one.
 
 Built with React Three Fiber (Three.js), TypeScript, and Zustand, with the
 graph and pathfinding algorithms written as pure, framework-free,
@@ -29,7 +29,7 @@ Network** to begin.
 npm run test
 ```
 
-41 tests, zero dependency on rendering: BFS (traversal order, shortest-path,
+55 tests, zero dependency on rendering: BFS (traversal order, shortest-path,
 one-ring reveal), DFS (stack push/pop correctness, path-finding), cycle
 detection (true positives, and no false positives from walking back to a
 parent), union-find (component merging, path compression), every level's
@@ -37,11 +37,16 @@ graph across the full 8-stage campaign (each stage's solvability and puzzle
 structure asserted against the real algorithms — both cyclic Act IV rings
 are verified with `detectCycle`, not eyeballed), the generalized
 stuck-detection failure state (fires exactly when no legal move remains,
-and provably does *not* misfire for abilities where it shouldn't), and A*
+and provably does *not* misfire for abilities where it shouldn't), A*
 (correctness on open and blocked grids, both maze trials' solvability,
-deterministic generation, and — the actual point of the bonus module —
-that Manhattan never expands more nodes than Euclidean on 4-directional
-movement, because Euclidean is a strictly looser lower bound).
+deterministic generation, and — the actual point of the bonus module — that
+each strategy expands progressively more nodes as its guess gets worse:
+Manhattan ≤ Euclidean ≤ Dijkstra, all three still agreeing on the true
+shortest path), and BST (in-order traversal is sorted order for *any*
+insertion sequence — the one property that makes it a search tree at all —
+search correctly reports both found and legitimately-not-found values, and
+the game's own step-by-step attach-by-attach play matches what a direct
+insert would have produced).
 
 ## Controls
 
@@ -97,20 +102,43 @@ play — not asserted in a README, visibly running.
 Reachable from a button on the Act V finale screen, and played across two
 trials of escalating size. Both are hand-designed, deterministically
 generated (seeded recursive backtracker, then lightly braided with extra
-loops — without loops, heuristic choice barely matters, which defeats the
-point). Clear Trial I with both heuristics and a "bigger maze" button
+loops — without loops, strategy choice barely matters, which defeats the
+point). Clear Trial I with all three strategies and a "bigger maze" button
 unlocks Trial II, roughly triple the cell count.
 
-Toggle between **Manhattan** and **Euclidean** heuristics and watch A* solve
-the same maze twice: unexplored cells are colored by the heuristic's own
-distance estimate to the goal (a violet-to-pink heat field, visible *before*
-the algorithm even runs), explored cells light up gold in the real order
-they were expanded, and the final path glows with a traveling light. The
-comparison panel then states the real result — on this maze, Manhattan
-consistently expands fewer nodes than Euclidean, because Euclidean distance
-is always a looser (less informative) lower bound than Manhattan distance
-for 4-directional grid movement. That inequality is also a unit test, not
-just a UI claim.
+Toggle between three search strategies and watch the same maze get solved
+three different ways: **Dijkstra** (no guess at all — h(n) = 0 everywhere),
+**Manhattan** (a tight guess that matches the maze's real movement cost
+exactly), and **Euclidean** (a looser, straight-line guess). Unexplored
+cells are colored by the active strategy's own distance estimate to the
+goal (a heat field, visible *before* the algorithm even runs), explored
+cells light up gold in the real order they were expanded, and the final
+path glows with a traveling light. The comparison panel states the real
+result: Dijkstra explores dramatically more of the maze than either A*
+variant — it has no idea which direction the goal is in, so it expands
+outward roughly evenly — while Manhattan consistently beats Euclidean,
+because Euclidean distance is always a looser lower bound than Manhattan
+distance for 4-directional grid movement. All three still agree on the
+exact same shortest path. That ordering is a unit test, not just a UI
+claim.
+
+## Bonus Trial — The Archive (BST)
+
+Reachable from the Maze trial or directly from the Act V finale screen — a
+genuinely different kind of gameplay from the rest of the game: instead of
+navigating a pre-built graph, you *build* this one. A sequence of seven
+values gets inserted one at a time into a binary search tree that starts
+with just a root chamber. At each step you're shown the value being placed
+against the chamber you're standing at and asked one question — smaller or
+larger? — and the dungeon grows a new chamber left or right as you answer
+correctly; a wrong guess costs nothing but a tracked mistake and doesn't
+move you. Once every value is placed, the same rule runs in reverse: find
+three target values by walking the identical left/right comparison, one of
+which doesn't exist in the tree at all — a real, legitimate "not found"
+that the search correctly recognizes rather than wandering forever. The
+payoff at the end is the in-order traversal of the tree you actually built,
+read out loud: it's always sorted, for any sequence you insert, which is
+the entire reason a binary search tree is a search tree.
 
 ## Real stakes, not just a retroactive grade
 
@@ -170,22 +198,23 @@ one-line summary on the clipboard.
 
 ```
 src/graph/   pure TypeScript — Graph model, bfs, dfs, cycleDetect,
-             unionFind, astar, and the full Vitest suite. No React or
+             unionFind, astar, bst, and the full Vitest suite. No React or
              Three.js imports anywhere in this folder, by design.
 src/scene/   React Three Fiber components that read graph/game state and
              render it — chambers, corridors, fog-of-war particles, the
              island-drift group, the title backdrop, the maze grid, the
-             camera rigs (including the travel flythrough). Never mutates
-             state directly (except the one deliberate, real graph
-             mutation: the Union-Find Key adding the bridge edge).
-src/game/    level data — eight campaign stages plus the seeded maze
-             generator (two trials) — the Zustand store tying player
-             position, revealed nodes, run stats, failure state, and every
-             act's ability-specific state together, and score.ts for
-             grading and best-run persistence.
+             BST tree layout, the camera rigs (including the travel
+             flythrough). Never mutates state directly (except two
+             deliberate, real mutations: the Union-Find Key adding the
+             bridge edge, and the Archive's tree growing by insertion).
+src/game/    level data — eight campaign stages, the seeded maze generator
+             (two trials), and the Archive's insert/search sequence — the
+             Zustand store tying player position, revealed nodes, run
+             stats, failure state, and every act's ability-specific state
+             together, plus score.ts for grading and best-run persistence.
 src/ui/      HUD, the literal node-edge minimap, the live Algorithm Trace
              panel, the Field Notes codex, the title screen, the failure/
-             retry banner, and the maze trial's controls.
+             retry banner, and both bonus trials' controls.
 src/audio/   procedural Web Audio sound design, no external files.
 ```
 
@@ -197,4 +226,5 @@ src/audio/   procedural Web Audio sound design, no external files.
 | Depth-first search | DFS Grapple ability, Act III (2 stages) |
 | Cycle detection | Cycle Ward ability, Act IV (2 stages) |
 | Union-find / connectivity | Union-Find Key ability, Act V |
-| A* search + heuristic design | Bonus Trial — The Maze (2 trials) |
+| A* search + heuristic design (vs. Dijkstra) | Bonus Trial — The Maze (2 trials) |
+| Binary search tree insert / search | Bonus Trial — The Archive |
