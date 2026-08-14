@@ -58,6 +58,7 @@ interface GameState {
   triggerAbility: () => void;
   advanceToLevel: (level: LevelDef) => void;
   restartLevel: () => void;
+  skipLevel: () => void;
   startRun: () => void;
   returnToTitle: () => void;
   enterMaze: () => void;
@@ -274,6 +275,18 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   advanceToLevel: (level) => get().loadLevel(level),
   restartLevel: () => get().loadLevel(get().level),
+
+  skipLevel: () => {
+    const { level } = get();
+    const idx = ACTS.findIndex((a) => a.id === level.id);
+    const next = idx >= 0 && idx < ACTS.length - 1 ? ACTS[idx + 1] : null;
+    if (next) {
+      get().loadLevel(next);
+    } else {
+      // Last stage (Act V) — skipping it means completing the campaign.
+      set({ won: true, wonFinale: true, failed: false, travelAnim: null });
+    }
+  },
 
   startRun: () => {
     set({ screen: "playing", runStartAt: Date.now(), runHops: 0, runRewinds: 0, runDejaVu: 0 });

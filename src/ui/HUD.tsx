@@ -121,6 +121,7 @@ export function HUD() {
   const currentNodeId = useGameStore((s) => s.currentNodeId);
   const failed = useGameStore((s) => s.failed);
   const failReason = useGameStore((s) => s.failReason);
+  const skipLevel = useGameStore((s) => s.skipLevel);
 
   const showAbilityButton = level.ability === "bfsTorch" || level.ability === "unionFindKey";
   const unionReady = level.ability === "unionFindKey" && level.bridge && currentNodeId === level.bridge.a;
@@ -160,6 +161,11 @@ export function HUD() {
               />
             ))}
           </div>
+          {!won && !failed && (
+            <button className="skip-btn" onClick={skipLevel}>
+              Skip stage →
+            </button>
+          )}
         </div>
       </div>
 

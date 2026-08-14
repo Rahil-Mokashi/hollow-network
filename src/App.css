@@ -99,6 +99,24 @@
   box-shadow: 0 0 6px #ffb066;
 }
 
+.skip-btn {
+  background: transparent;
+  border: 1px solid rgba(184, 180, 168, 0.3);
+  color: #7c8590;
+  font-family: inherit;
+  font-size: 0.66rem;
+  letter-spacing: 0.02em;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.skip-btn:hover {
+  border-color: #ffb066;
+  color: #ffb066;
+}
+
 .hop-value {
   color: #ffb066;
   font-weight: 700;
